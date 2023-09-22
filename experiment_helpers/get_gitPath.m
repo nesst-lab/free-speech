@@ -11,8 +11,10 @@ switch reponame
         mfilename = 'forcedAlignment.m'; % representative function from current-studies
     case 'cerebellar-battery'
         mfilename = 'run_cerebTimeAdapt_expt.m'; % Representative function from cerebellar-battery 
+    case 'study-code'
+        mfilename = 'run_timeZapper_expt.m'; % Representative function from study-code (first NeSST study)
     otherwise
-        error('Unknown git repo "%s". Expected "free-speech" or "current-studies".',reponame)
+        error('Unknown git repo "%s". Expected "free-speech", "current-studies", "cerebellar-battery", or "study-code".',reponame)
 end
 
 fileloc = which(mfilename, '-all');
