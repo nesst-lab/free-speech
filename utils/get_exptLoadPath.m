@@ -3,7 +3,15 @@ function [exptPath] = get_exptLoadPath(exptName,varargin)
 if nargin < 1, exptName = []; end
 
 if ispc
-    basePath = '\\wcs-cifs.waisman.wisc.edu\wc\smng\experiments\';
+    % Adjustment for using at NeSST Lab
+    computerName = getenv('COMPUTERNAME');
+    if contains(computerName, 'LEWIS221')
+        username = getenv('USERNAME'); 
+        basePath = ['C:\Users\' username '\OneDrive - University of Missouri\nesstlab\experiments\']; 
+    else
+        basePath = '\\wcs-cifs.waisman.wisc.edu\wc\smng\experiments\';
+    end    
+    
 elseif ismac
     basePath = '/Volumes/smng/experiments/';
     if ~isfolder(basePath)
