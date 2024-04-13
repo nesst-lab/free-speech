@@ -32,13 +32,18 @@ function [] =  forcedAlignment_mfa3(dataPath,exptfield,genfilesOrAlign,language,
 %   
 
 %Set up correct python env
-pyloc = fullfile('C:\ProgramData\miniconda3\Scripts\');
-if ~exist(pyloc, 'dir')
-        prompt = sprintf('The aligner environment does not appear to be configured correctly in %s. Try to align anyway? (y/n) ', pyloc);
-        response = input(prompt,'s');
-        while ~strcmpi(response, {'y','n'})
-            response = input('Please provide y for yes or n for no: ','s');
-        end
+
+%%
+dbstop if error
+
+%% 
+
+activater = fullfile('C:\ProgramData\miniconda3\Scripts\activate.bat');
+cmdLocation = '%windir%\System32\cmd.exe'; 
+activateLocation = fileparts(activater); 
+if ~exist(activateLocation, 'dir')
+        prompt = sprintf('The aligner environment does not appear to be configured correctly in %s. Try to align anyway?', activateLocation);
+        response = askNChoiceQuestion(prompt,{'y' 'n'});
         if strcmpi(response,'n')
             fprintf('See the KB doc on installing MFA for instructions on setting up the aligner conda environment \n')
             return
@@ -49,15 +54,15 @@ end
 %  set the correct expected location of the montreal forced aligner files.
 % I don't know if this is actually necessary? 
 if ismac
-    alignerLocation = '/Applications/montreal-forced-aligner';
+    alignerLocation = '/Applications/montreal-forced-aligner'; % THIS IS NOT UPDATED. I HAVE NO MACS
 elseif ispc
-    alignerLocation = '\\wcs-cifs\wc\smng\montreal-forced-aligner';
+    alignerLocation = 'C:\Users\Public\.conda\envs\aligner';
 end
 
 %  Handle various user-given arguments
 dbstop if error
 if nargin < 1 || isempty(dataPath), dataPath = cd; end
-if nargin < 3 || isempty(genfilesOrAlign), genfilesOrAlign = 0; end
+if nargin < 3 || isempty(genfilesOrAlign), genfilesOrAlign = 'both'; end
 if nargin < 4 || isempty(language), language = 'english_us_arpa'; end % this might be a new update 
 if nargin < 5 || isempty(dictionary), dictionary = language; end
 
@@ -71,11 +76,14 @@ wordlist = expt.(exptfield);
 %      - The executable mfa_align file that performs the alignment
 %      - A folder for the generated TEXTGRID files (called "PostAlignment")
 
-prealignFolder = fullfile(dataPath,'PreAlignment');
+prealignTag = 'PreAlignment'; 
+postalignTag = 'PostAlignment'; 
+
+prealignFolder = fullfile(dataPath,prealignTag);
 if ~exist(prealignFolder, 'dir')
     mkdir(prealignFolder)
 end
-outputLocation = fullfile(dataPath,'PostAlignment');
+outputLocation = fullfile(dataPath,postalignTag);
 if ~exist(outputLocation, 'dir')
     mkdir(outputLocation)
 end
@@ -121,18 +129,44 @@ if ~strcmp(genfilesOrAlign, 'align')
     end
 end
 
+%%
 % Set up and run python mfa align command
-%TODO: This has only been tested on windows?
+% NOTE THIS IS A REALLY JANKY WAY TO DO THIS BUT I DO NOT KNOW HOW TO DO IT BETTER
 if ~strcmp(genfilesOrAlign, 'gen')
-fprintf('Calling conda to run MFA... \n');
+    fprintf('Calling conda to run MFA... \n');
+    
+    % Get current directory so you can return to it 
+    currentDir = pwd; 
+    
+    % Then change working directory to the datapath 
+    cd(dataPath); 
+    
+    % Create the mfa command and then copy it to the clipboard so the user can paste it in 
+    mfaCommand = sprintf('%s ./%s %s %s ./%s', 'mfa align --clean', prealignTag, language, dictionary, postalignTag); 
+    clipboard('copy', mfaCommand); 
+    warning(sprintf(['The alignment command has been copied to your clipboard. \n' ...
+        'When the CMD interface appears in the MATLAB Command Window, paste the command into the command window and hit enter.\n'...
+        'When alignment is complete, type exit, and hit enter'])); 
+    fprintf('\n\n')
+    ack = askNChoiceQuestion('Enter Y to acknowledge:', {'y' 'Y'}, 0); 
+    
+    % Run system command
+    systemCommand = sprintf('%s %s %s %s', cmdLocation, '"/K"', activater, alignerLocation); 
+    systemOutput = system(systemCommand); 
+    
+    % Back in Matlab 
+    fprintf('Conda call completed. Returned to Matlab.\n');
+    cd(currentDir)
+    
+    if ~systemOutput
+        disp("Check the console output and PostAlignment folder to be sure that your TextGrid files have been successfully created.");
+    else
+        disp("There was an error. Please read the error message carefully."); 
+    end
 
-command = sprintf('%s init & %s activate aligner & mfa align --clean %s %s %s %s ', fullfile(pyloc, 'conda'), fullfile(pyloc, 'conda'), prealignFolder, dictionary, language, outputLocation);
-system(command)
-fprintf('Conda call completed. Returned to Matlab.\n');
-
-disp("Check the console output and PostAlignment folder to be sure that your TextGrid files have been successfully created.");
 end
-return
+
+
 
 end % % EOF
 
