@@ -1,4 +1,4 @@
-function [timedout] = ptbDisplay_thenWait4Key(continueKey, wait4break)
+function [timedout] = ptbDisplay_thenWait4Key(continueKey, wait4break, win)
 
 if nargin < 1 || isempty(continueKey), continueKey = KbName('space'); end
 if nargin < 2 || isempty(wait4break), wait4break = 60; end % 60 seconds
