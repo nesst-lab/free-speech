@@ -56,7 +56,7 @@ end
 if ismac
     alignerLocation = '/Applications/montreal-forced-aligner'; % THIS IS NOT UPDATED. I HAVE NO MACS
 elseif ispc
-    alignerLocation = 'C:\Users\Public\.conda\envs\aligner';
+    alignerLocation = 'C:\Users\Public\Documents\software\.conda\envs\aligner';
 end
 
 %  Handle various user-given arguments
