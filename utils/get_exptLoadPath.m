@@ -2,7 +2,8 @@ function [exptPath] = get_exptLoadPath(exptName,varargin)
 
 if nargin < 1, exptName = []; end
 
-nesstComputers = {'WHITTAKER', 'PERTWEE', 'TENNANT', 'DAVISON', 'BAKER', 'MCCOY', 'CHLPR-CSJZ3M3'}; 
+nesstComputers = {'WHITTAKER', 'PERTWEE', 'TENNANT', 'DAVISON', 'BAKER', 'MCCOY', 'MCGANN', 'CHLPR-CSJZ3M3'}; 
+bjorndahlComputers = {'P-CBJORN-L'}; 
 
 if ispc
     % Adjustment for using at NeSST Lab
@@ -21,6 +22,8 @@ if ispc
         else
             basePath = ['C:\Users\' username '\OneDrive - University of Missouri\nesstlab\experiments\']; 
         end
+    elseif ismember(computerName, bjorndahlComputers)
+        basePath = 'C:\Users\Public\Documents\experiments\'; 
     else
         basePath = '\\wcs-cifs.waisman.wisc.edu\wc\smng\experiments\';
     end    

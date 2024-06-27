@@ -67,7 +67,7 @@ save(fullfile(expt.dataPath, 'expt.mat'), 'expt');
 
 % Get audio playback information 
 info = audiodevinfo; 
-focusriteIx = find(contains({info.output.Name}, 'Focusrite')); 
+focusriteIx = [find(contains({info.output.Name}, 'Focusrite')) find(contains({info.output.Name}, 'Scarlett'))]; 
 focusriteID = info.output(focusriteIx).ID; 
 
 for i = 1:length(expt.steps)
@@ -146,6 +146,7 @@ for itrial = 1:expt.ntrials
     
     % Get response 
     response = {};
+    subjInput = {}; 
     tic; 
     while isempty(response)
         w = waitforbuttonpress;
@@ -165,6 +166,7 @@ for itrial = 1:expt.ntrials
     % Delete text 
     delete_exptText(h_fig, h_reminder); 
     if exist('h_badResponse','var')
+        pause(0.5)
         delete_exptText(h_fig,h_badResponse)
     end
     rt = toc; 
