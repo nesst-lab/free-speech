@@ -1,4 +1,4 @@
-function errors = check_dataVals(dataPath,bCalc,buffertype,dataVals, folderSuffix, errorParams)
+function errors = check_dataVals(dataPath,bCalc,buffertype,dataVals, folderSuffix, errorParams, vowel_list)
 %check formant data for errors and return trial numbers where errors are
 %detected. Types of errors:
 %             * jumpTrials in F1/F2 trajectory
@@ -29,6 +29,7 @@ if nargin < 2 || isempty(bCalc), bCalc = 1; end
 if nargin < 3 || isempty(buffertype), buffertype = 'signalIn'; end
 if nargin < 5, folderSuffix = []; end
 if nargin < 6, errorParams = []; end
+if nargin < 7 || isempty(vowel_list), vowel_list = []; end
 
 % config errorParams
 defaultParams.shortThresh = 0.1; %less than 100 ms
@@ -71,7 +72,7 @@ UserData.warnText = uicontrol(UserData.warnPanel,'style','text',...
         
 %% load data if needed
 if nargin < 4 || isempty(dataVals)
-    [dataVals,expt] = load_dataVals(UserData,dataPath,bCalc);
+    [dataVals,expt] = load_dataVals(UserData,dataPath,bCalc, vowel_list);
 else
     load(fullfile(dataPath,'expt'), 'expt'); 
 end
@@ -142,7 +143,7 @@ function reload_dataVals(src,evt)
         UserData = rmfield(UserData,'htracks');
         UserData = rmfield(UserData,'hsub');
     end
-    [UserData.dataVals,UserData.expt] = load_dataVals(UserData,UserData.dataPath,1);
+    [UserData.dataVals,UserData.expt] = load_dataVals(UserData,UserData.dataPath,1, vowel_list);
     UserData.errors = get_dataVals_errors(UserData,UserData.dataVals);
     UserData = generate_menus(UserData);
     guidata(src,UserData);
@@ -208,7 +209,7 @@ function errors = get_dataVals_errors(UserData,dataVals)
     set(UserData.warnPanel,'HighlightColor',[1 1 1])
 end
 
-function [dataVals,expt] = load_dataVals(UserData,dataPath,bCalc)
+function [dataVals,expt] = load_dataVals(UserData,dataPath,bCalc,vowel_list)
     if bCalc
         msg = 'Regenerating and loading dataVals';
     else
@@ -236,7 +237,7 @@ function [dataVals,expt] = load_dataVals(UserData,dataPath,bCalc)
         end
     end
     if bCalc
-        gen_dataVals_from_wave_viewer(dataPath,trialdir, []);
+        gen_dataVals_from_wave_viewer(dataPath,trialdir, [], [], vowel_list);
     end
     load(fullfile(dataPath,dataValsID))
     load(fullfile(dataPath,'expt'), 'expt')
