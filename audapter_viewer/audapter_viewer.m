@@ -124,7 +124,7 @@ fs = p.sigproc_params.fs;
 p.event_params = get_event_params;
 all_ms_framespecs = get_all_ms_framespecs();
 
-
+logshim = 0.005; % "Shimming up" the log. If you had a bunch of 0s (e..g if the mic didn't start on time), this helps. 
 
 %% Setting up info for use in manipulating OST/PCF files. 
 % Now fitted to be  more general, checks for trackingFileLoc and trackingFileName in expt structure, uses defaults if the 
@@ -359,7 +359,7 @@ else
     % If the new version of the field does exist, then set ost_calc to {y.ost_calc}
     ost_calc = {y.ost_calc}; 
 end
-[trial_axes,h_rms,h_rms_rat,h_dRms,h_dRms_rat,h_ost,h_ostref,h_editost_ref,audTAxis] = new_trial_axes(y,p,trials,ostStatus,heuristic,ost_calc); % This should work 10/31/2019
+[trial_axes,h_rms,h_rms_rat,h_dRms,h_dRms_rat,h_ost,h_ostref,h_editost_ref,audTAxis] = new_trial_axes(y,p,trials,ostStatus,heuristic,ost_calc, logshim); % This should work 10/31/2019
 % Need to update to store each individual OST line so that it can be refreshed with the OST changing
 
 % Same retrofitting for calcSignalOut/ signalOut_calc
@@ -372,7 +372,7 @@ if ~isfield(y,'signalOut_calc')
 else
     signalOut_calc = {y.signalOut_calc}; 
 end
-[output_trial_axes, h_outputOst, output_audTAxis,h_formantsIn_1,h_formantsIn_2,h_formantsOut_1,h_formantsOut_2] = new_output_trial_axes(y,x,p,trackingFileDir,trackingFileName,trials,signalOut_calc); 
+[output_trial_axes, h_outputOst, output_audTAxis,h_formantsIn_1,h_formantsIn_2,h_formantsOut_1,h_formantsOut_2] = new_output_trial_axes(y,x,p,trackingFileDir,trackingFileName,trials,signalOut_calc, logshim); 
 
 % Only keeping this in because I haven't gotten rid of all the functions yet and Matlab parses them as
 % erroring if these vars aren't defined RPK 10/31
@@ -778,7 +778,7 @@ hbutton.calcAllOST = uicontrol(p.guidata.buttonPanel,'Style','pushbutton',...
                ost_stat = ost_calc{trials(traxix)}; 
                axes(trial_axes(traxix)); %set the current axes to trial_axis(n)
                yyaxis left % plot onto the left axis so that the RMS values don't get smashed to the bottom
-               h_ost(traxix) = plot(audTAxis{traxix},ost_stat * p.ostMultiplier, 'w-', 'LineWidth', 1.5); 
+               h_ost(traxix) = plot(audTAxis{traxix},ost_stat * p.ostMultiplier, 'Color', 'y', 'Marker', 'none', 'Linestyle', '-', 'LineWidth', 1.5); 
             end
             waitbar(1,fWaiting,'Done')
             set(htoggle.ost,'Value',1); 
@@ -877,7 +877,7 @@ normal_bgcolor = get(hbutton.calcAllOST,'BackgroundColor');
                 ost_stat = ost_calc{trials2calc}; 
                 axes(trial_axes(traxix)); %set the current axes to trial_axis(n)
                 yyaxis left % plot onto the left axis so that the RMS values don't get smashed to the bottom
-                h_ost(traxix) = plot(audTAxis{traxix},ost_stat * p.ostMultiplier, 'w-', 'LineWidth', 1.5); 
+                h_ost(traxix) = plot(audTAxis{traxix},ost_stat * p.ostMultiplier, 'Color', 'y', 'Marker', 'none', 'Linestyle', '-', 'LineWidth', 1.5); 
             else
                 delete(h_ost(1:end));
                 % Make new h_ost and plot
@@ -885,7 +885,7 @@ normal_bgcolor = get(hbutton.calcAllOST,'BackgroundColor');
                    ost_stat = ost_calc{trials2calc(traxix)}; 
                    axes(trial_axes(traxix)); %set the current axes to trial_axis(n)
                    yyaxis left % plot onto the left axis so that the RMS values don't get smashed to the bottom
-                   h_ost(traxix) = plot(audTAxis{traxix},ost_stat * p.ostMultiplier, 'w-', 'LineWidth', 1.5); 
+                   h_ost(traxix) = plot(audTAxis{traxix},ost_stat * p.ostMultiplier, 'Color', 'y', 'Marker', 'none', 'Linestyle', '-', 'LineWidth', 1.5); 
                 end
             end
 
@@ -1115,7 +1115,7 @@ hdropdown.ostNumber = uicontrol(p.guidata.buttonPanel,'Style','popupmenu',...
         for traxix = 1:length(trial_axes)
             axes(trial_axes(traxix));  
             yyaxis left
-            h_editost_ref(traxix) = yline(ostStatus * p.ostMultiplier, ['--' p.plot_params.line_colors.editost_ref], statusLabel);
+            h_editost_ref(traxix) = yline(ostStatus * p.ostMultiplier, '--', statusLabel, 'color', p.plot_params.line_colors.editost_ref);
         end
         htoggle.editOstRef.Value = 1; 
     end
@@ -1213,11 +1213,11 @@ hdropdown.heuristicChoice = uicontrol(p.guidata.buttonPanel,'Style','popupmenu',
                 [valMultipliers, lineVisibility, lineType] = get_rmsLineProperties(heuristic, rms, dRms, rms_rat, dRms_rat); 
 
 
-                h_rms(traxix) = plot(audTAxis{traxix}, rms * valMultipliers.rms, [lineType.rms p.plot_params.line_colors.rms]); 
+                h_rms(traxix) = plot(audTAxis{traxix}, rms * valMultipliers.rms, 'linestyle', lineType.rms, 'color', p.plot_params.line_colors.rms, 'Marker', 'none'); 
                 set(h_rms(traxix),'visible',lineVisibility.rms)
-                h_rms_rat(traxix) = plot(audTAxis{traxix}, rms_rat * valMultipliers.rms_rat, [lineType.rms_rat p.plot_params.line_colors.rms_rat]); 
+                h_rms_rat(traxix) = plot(audTAxis{traxix}, rms_rat * valMultipliers.rms_rat, 'linestyle', lineType.rms_rat, 'color', p.plot_params.line_colors.rms_rat, 'Marker', 'none'); 
                 set(h_rms_rat(traxix),'visible',lineVisibility.rms_rat) 
-                h_dRms(traxix) = plot(audTAxis{traxix}, dRms * valMultipliers.dRms, [lineType.dRms p.plot_params.line_colors.dRms]); 
+                h_dRms(traxix) = plot(audTAxis{traxix}, dRms * valMultipliers.dRms, 'linestyle', lineType.dRms, 'color', p.plot_params.line_colors.dRms, 'Marker', 'none'); 
                 set(h_dRms(traxix),'visible',lineVisibility.dRms)
                 h_dRms_rat(traxix) = plot(audTAxis{traxix}, dRms_rat * valMultipliers.dRms_rat, 'linestyle', lineType.dRms_rat, 'color', p.plot_params.line_colors.dRms_rat, 'marker', 'none'); 
                 set(h_dRms_rat(traxix), 'visible', lineVisibility.dRms_rat); 
@@ -1716,7 +1716,7 @@ hbutton.plotNewTrials = uicontrol(p.guidata.trialPanel,'Style','pushbutton',...
         [trial_axes,h_rms,h_rms_rat,h_dRms,h_dRms_rat,h_ost,h_ostref,h_editost_ref,audTAxis] = new_trial_axes(y,p,trials,ostStatus,heuristic,ost_calc);
     
         clear output_trial_axes h_outputOst output_audTAxis
-        [output_trial_axes,h_outputOst,output_audTAxis,h_formantsIn_1,h_formantsIn_2,h_formantsOut_1,h_formantsOut_2] = new_output_trial_axes(y,x,p,trackingFileDir,trackingFileName,trials,signalOut_calc); 
+        [output_trial_axes,h_outputOst,output_audTAxis,h_formantsIn_1,h_formantsIn_2,h_formantsOut_1,h_formantsOut_2] = new_output_trial_axes(y,x,p,trackingFileDir,trackingFileName,trials,signalOut_calc, logshim); 
         
         if ~ismember(pcfTrial,trials)
             pcfTrial = min(trials); 
@@ -1833,7 +1833,7 @@ hbutton.recalculateAllWarp = uicontrol(p.guidata.pcf_buttonPanel,'Style','pushbu
 
             clear output_trial_axes h_outputOst output_audTAxis
             close(fWaiting); 
-            [output_trial_axes,h_outputOst,output_audTAxis,h_formantsIn_1,h_formantsIn_2,h_formantsOut_1,h_formantsOut_2] = new_output_trial_axes(y,x,p,trackingFileDir,trackingFileName,trials,signalOut_calc); 
+            [output_trial_axes,h_outputOst,output_audTAxis,h_formantsIn_1,h_formantsIn_2,h_formantsOut_1,h_formantsOut_2] = new_output_trial_axes(y,x,p,trackingFileDir,trackingFileName,trials,signalOut_calc,logshim); 
             set_pcf_alert4calcOST_if_true(0); 
         catch exception
             errorText = getReport(exception, 'basic', 'hyperlinks','off'); 
@@ -1906,7 +1906,7 @@ hbutton.recalculateSingleWarp = uicontrol(p.guidata.pcf_buttonPanel,'Style','pus
             % Spectrogram
             [s, f, t] = spectrogram(axdat{1}, 256, 192, 1024, fs);
 
-            imagesc(ax, t, f, 10 * log10(abs(s)));
+            imagesc(ax, t, f, 20 * log10(abs(s) + logshim)); % this does something to the spectrogram so it doesn't matter if you have a lot of 0s
 
             set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto')
 
@@ -3378,7 +3378,7 @@ end
 end
 
 %% Create axes, or update when plotting new set of trials 
-function [trial_axes,h_rms,h_rms_rat,h_dRms,h_dRms_rat,h_ost,h_ostref,h_osteditref,audTAxis] = new_trial_axes(y,p,trials,ostStatus,heuristic,ost_calc)
+function [trial_axes,h_rms,h_rms_rat,h_dRms,h_dRms_rat,h_ost,h_ostref,h_osteditref,audTAxis] = new_trial_axes(y,p,trials,ostStatus,heuristic,ost_calc, logshim)
 % Creates axes for plotting 9 trials, starting top left, moving right and down
 % THIS IS SPECIFIC TO AUDAPTER_VIEWER
 % y is the data structure
@@ -3438,7 +3438,7 @@ warning('off','MATLAB:audiovideo:audioplayer:noAudioOutputDevice')
                 
                 % Spectrogram
                 [s, f, t] = spectrogram(axdat{1}, 256, 192, 1024, fs);
-                imagesc(ax, t, f, 10 * log10(abs(s)));
+                imagesc(ax, t, f, 10 * log10(abs(s) + logshim));
                 set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto')
                 ax.YDir = 'normal';
                 ax.YLim = [0 6000]; 
@@ -3477,7 +3477,7 @@ warning('off','MATLAB:audiovideo:audioplayer:noAudioOutputDevice')
                 frameDur = data2plot(traxix).params.frameLen / fs;
                 audTAxis{traxix} = 0 : frameDur : frameDur * (size(rms, 1) - 1);
                 
-                h_ost(traxix) = plot(audTAxis{traxix}, ost_stat * p.ostMultiplier, p.plot_params.line_colors.ost, 'Linewidth', 1.5); 
+                h_ost(traxix) = plot(audTAxis{traxix}, ost_stat * p.ostMultiplier, 'Color', p.plot_params.line_colors.ost, 'Linewidth', 1.5); 
                 
                 triggerIndex = find(p.eventNumbers == p.sigproc_params.triggerStatus); 
                 if isempty(triggerIndex)
@@ -3493,7 +3493,7 @@ warning('off','MATLAB:audiovideo:audioplayer:noAudioOutputDevice')
                 else
                     statusLabel = p.eventNames{ostIndex}; 
                 end
-                h_osteditref(traxix) = yline(ostStatus * p.ostMultiplier, ['--' p.plot_params.line_colors.editost_ref], statusLabel); 
+                h_osteditref(traxix) = yline(ostStatus * p.ostMultiplier, '--', statusLabel, 'color', p.plot_params.line_colors.editost_ref); 
                 if ostStatus == p.sigproc_params.triggerStatus
                     set(h_osteditref(traxix),'visible','off'); 
                 end
@@ -3504,7 +3504,7 @@ warning('off','MATLAB:audiovideo:audioplayer:noAudioOutputDevice')
                 [valMultipliers, lineVisibility, lineType] = get_rmsLineProperties(heuristic, rms, dRms, rms_rat, dRms_rat); 
                 h_rms(traxix) = plot(audTAxis{traxix}, rms * valMultipliers.rms, [lineType.rms p.plot_params.line_colors.rms]); 
                 set(h_rms(traxix),'visible',lineVisibility.rms)
-                h_rms_rat(traxix) = plot(audTAxis{traxix}, rms_rat * valMultipliers.rms_rat, [lineType.rms_rat p.plot_params.line_colors.rms_rat]); 
+                h_rms_rat(traxix) = plot(audTAxis{traxix}, rms_rat * valMultipliers.rms_rat, 'linestyle', lineType.rms_rat, 'color', p.plot_params.line_colors.rms_rat); 
                 set(h_rms_rat(traxix),'visible',lineVisibility.rms_rat) 
                 h_dRms(traxix) = plot(audTAxis{traxix}, dRms * valMultipliers.dRms, [lineType.dRms p.plot_params.line_colors.dRms]); 
                 set(h_dRms(traxix),'visible',lineVisibility.dRms)
@@ -3548,7 +3548,7 @@ end
 
 
 %%
-function [output_trial_axes,h_outputOst,output_audTAxis,h_formantsIn_1, h_formantsIn_2, h_formantsOut_1, h_formantsOut_2] = new_output_trial_axes(y,x,p,trackingFileDir,trackingFileName,trials,signalOut_calc)
+function [output_trial_axes,h_outputOst,output_audTAxis,h_formantsIn_1, h_formantsIn_2, h_formantsOut_1, h_formantsOut_2] = new_output_trial_axes(y,x,p,trackingFileDir,trackingFileName,trials,signalOut_calc, logshim)
 % Creates axes for plotting 9 trials, starting top left, moving right and down
 % THIS IS SPECIFIC TO AUDAPTER_VIEWER
 % y is the data structure
@@ -3642,7 +3642,7 @@ warning('off','MATLAB:audiovideo:audioplayer:noAudioOutputDevice')
                 
                 % Spectrogram
                 [s, f, t] = spectrogram(axdat{1}, 256, 192, 1024, fs);
-                imagesc(ax, t, f, 10 * log10(abs(s)));
+                imagesc(ax, t, f, 10 * log10(abs(s) + logshim));
                 set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto')
                 ax.YDir = 'normal';
                 
@@ -3694,7 +3694,7 @@ warning('off','MATLAB:audiovideo:audioplayer:noAudioOutputDevice')
                 
                 
                 yyaxis right % On these the multiplier doesn't need to be in maybe?                 
-                h_outputOst(traxix) = plot(output_audTAxis{traxix}, ost_stat, p.plot_params.line_colors.ost, 'Linewidth', 1.5); 
+                h_outputOst(traxix) = plot(output_audTAxis{traxix}, ost_stat, 'Color', p.plot_params.line_colors.ost, 'Linewidth', 1.5); 
                 set(gca, 'ylim', [0 maxOstYlim]); 
                 set(gca, 'ytick', 0:2:maxOstYlim); % integer ylim
                 
@@ -3837,13 +3837,13 @@ end
 %% get figure params (used to be global vars) ******
 function [fig_params] = get_fig_params()
 
-fig_params.line_colors.ost = 'w'; 
+fig_params.line_colors.ost = 'y'; 
 fig_params.line_colors.ost_ref = 'r';
-fig_params.line_colors.editost_ref = 'y';
-fig_params.line_colors.rms = 'c'; 
-fig_params.line_colors.rms_rat = 'g'; 
+fig_params.line_colors.editost_ref = [255, 130, 0]./255;
+fig_params.line_colors.rms = 'b'; 
+fig_params.line_colors.rms_rat = [50, 200, 50]./255; 
 fig_params.line_colors.dRms = 'm'; 
-fig_params.line_colors.dRms_rat = [0.95 0.6 0.3]; 
+fig_params.line_colors.dRms_rat = [149, 52, 235]./255; 
 % {'b','r','g','k','c','m'}; % colors for more formants than you'll ever use
 
 fig_params.line_colors.formantsIn = 'c'; 
