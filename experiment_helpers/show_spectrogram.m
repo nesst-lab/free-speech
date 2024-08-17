@@ -23,7 +23,7 @@ else % If it is, then do narrow
     [s, f, t]=spectrogram(w, 256, 192, 1024, fs);
 end
 
-imagesc(t, f, 10 * log10(abs(s))); hold on;
+imagesc(t, f, 10 * log10(abs(s) + 0.005)); hold on; % Rk change: added a "logshim" so that trials where the microphone didn't go on immediately still display well 
 axis xy;
 hold on;
 set(gca, 'YLim', [f(1), f(end)]);
