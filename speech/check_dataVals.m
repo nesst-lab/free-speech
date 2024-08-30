@@ -50,6 +50,7 @@ UserData.f = f;
 UserData.buffertype = buffertype;
 UserData.folderSuffix = folderSuffix;
 UserData.errorParams = errorParams;
+UserData.vowel_list = vowel_list; 
 
 %% create warning field in GUI
 UserData.xPosMax = 0.975;
@@ -143,7 +144,7 @@ function reload_dataVals(src,evt)
         UserData = rmfield(UserData,'htracks');
         UserData = rmfield(UserData,'hsub');
     end
-    [UserData.dataVals,UserData.expt] = load_dataVals(UserData,UserData.dataPath,1, vowel_list);
+    [UserData.dataVals,UserData.expt] = load_dataVals(UserData,UserData.dataPath,1, UserData.vowel_list);
     UserData.errors = get_dataVals_errors(UserData,UserData.dataVals);
     UserData = generate_menus(UserData);
     guidata(src,UserData);
