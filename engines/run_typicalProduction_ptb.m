@@ -1,6 +1,6 @@
 function [expt] = run_typicalProduction_ptb(expt,trials2run)
-% Trial engine for typical production tasks. Currently only used for cerebellar battery but could be used for anything,
-% really. This is the PTB version, which will be used at UC-Berkeley. 
+% Trial engine for typical production tasks. This is a version that is in free-speech and to be used with any type of typical
+% production study; cerebellar-battery has a function that is named the same. 
 % 
 % Areas that may have to be edited to run on different hardware/drive setups at different sites have been marked with TKTKTKTKT
 % for easy search ability 

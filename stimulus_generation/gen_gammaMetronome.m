@@ -1,4 +1,4 @@
-function [varargout] = gen_gammaMetronome(saveAs, isis, frontPad, fs, tSavePlay, gammaParams)
+function [varargout] = gen_gammaMetronome(saveAs, isis, edgePad, fs, tSavePlay, gammaParams)
 % Function that generates a metronome using a predetermined gamma tone and a list of ISIs in seconds. ISI is generated from
 % middle of gamma tone to middle of gamma tone (or start to start), not end of gamma tone 1 to start of gamma tone 2. 
 % 
@@ -12,8 +12,8 @@ function [varargout] = gen_gammaMetronome(saveAs, isis, frontPad, fs, tSavePlay,
 %                               you should provide a uniform vector, or use gen_sinetoneTempos with the 'gamma' option for
 %                               f0. This is specified in seconds. Defaults to a dummy train. 
 %
-%       frontPad                How long (in seconds) you would like silence in the vector before the first gammatone.
-%                               Defaults to 0. 
+%       edgePad                 How long (in seconds) you would like silence in the vector before the first gammatone, and
+%                               after the last. Defaults to 0. 
 %
 %       fs                      The sampling rate of the sound you would like to create. Defaults to 24,000
 % 
@@ -36,6 +36,7 @@ function [varargout] = gen_gammaMetronome(saveAs, isis, frontPad, fs, tSavePlay,
 %       metronomeSound          A vector that produces the sound
 % 
 % Initiated RPK 2022-06-15
+% RK edited 2024-08-26 to change frontPad to edgePad. Will now give symmetrical padding. 
 % 
 
 dbstop if error
@@ -44,7 +45,7 @@ dbstop if error
 if nargin < 1 || isempty(saveAs), saveAs = fullfile(get_acoustLoadPath('cerebPacedVot'), 'stimuli', 'metronome.wav'); end
 if nargin < 2 || isempty(isis), isis = [repmat(0.5, 1, 4) repmat(0.4, 1, 4) repmat(0.3, 1, 4)]; end
 if nargin < 3 || isempty(fs), fs = 24000; end
-if nargin < 4 || isempty(frontPad), frontPad = 0; end
+if nargin < 4 || isempty(edgePad), edgePad = 0; end
 if nargin < 5 || isempty(tSavePlay), tSavePlay = 'save'; end
 
 % Properties of gammatone
@@ -81,20 +82,21 @@ peakGamma = max(abs(gammaTone));
 gammaTone = gammaTone / peakGamma; 
 
 % Initial padding
-frontZeros = []; 
-if frontPad, frontZeros = zeros(1, frontPad*fs); end
+edgeZeros = []; 
+if edgePad, edgeZeros = zeros(1, edgePad*fs); end
 
 
 %% String blips together
 adjustedIsis = isis - gp.duration;             % ISIs, accounting for the duration of the metronome impulse
 fprintf('Generating metronome... ')
 
-metronome = [frontZeros gammaTone]; 
+metronome = [edgeZeros gammaTone]; 
 for i = 1:length(adjustedIsis)     
     adjustedIsi = adjustedIsis(i); 
     isiZeros = zeros(1, ceil(adjustedIsi*fs)); 
     metronome = [metronome isiZeros gammaTone]; 
 end
+metronome = [metronome edgeZeros]; 
 
 %% Toggle saving/playing
 
