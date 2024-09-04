@@ -115,7 +115,7 @@ Screen('TextSize', win, expt.instruct.txtparams.FontSize);
 InitializePsychSound;   % set up Psychtoolbox audio mex
 wasapiDevices = PsychPortAudio('GetDevices',13); % 13 is WASAPI
 deviceNames = {wasapiDevices.DeviceName}; 
-scarletts = find(contains(deviceNames, 'Focusrite')); % TKTKTKTKT Berkeley/UCSF potential edit somewhere in here to make sure the right device is selected
+scarletts = find(contains(deviceNames, 'Focusrite') & ~contains(deviceNames, 'Loopback')); % TKTKTKTKT Berkeley/UCSF potential edit somewhere in here to make sure the right device is selected
 inputDevs = find([wasapiDevices.NrInputChannels] > 0); 
 inputScarlett = intersect(inputDevs, scarletts); 
 
