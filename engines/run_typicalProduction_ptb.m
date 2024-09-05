@@ -83,19 +83,34 @@ expt = set_exptDefaults(expt);
 Screen('Preference', 'SkipSyncTests', 1);
 screens = Screen('Screens');
 screenNumber = max(screens); % TKTKTKTKT UCSF/BERKELEY potential edit site
-[~, screenHeightpx] = Screen('WindowSize', screenNumber); 
+cloneScreenNumber = max(screens) - 1; %RK 0 is fullscreen. This works when the second screen is to the right
+[screenWidthpx, screenHeightpx] = Screen('WindowSize', screenNumber); 
 windowPointers = Screen('Windows'); 
 if ~isfield(expt, 'win') || isempty(windowPointers) % If you haven't saved an expt.win pointer or there are no current open PTB windows 
-    win = Screen('OpenWindow', screenNumber);
+    [win, rect] = Screen('OpenWindow', screenNumber);
     expt.win = win; 
 else
     if ~ismember(expt.win, windowPointers)
-        win = Screen('OpenWindow', screenNumber); 
+        [win, rect] = Screen('OpenWindow', screenNumber); 
     else
         win = expt.win;
     end
 end
 
+
+if ~isfield(expt, 'cloneWin') || length(windowPointers) == 1 % If you haven't saved an expt.win pointer or there are no current open PTB windows 
+    [cloneWin, cloneRect] = Screen('OpenWindow', cloneScreenNumber, [0 0 0], [10 10 screenWidthpx/2, screenHeightpx/2]);
+    expt.cloneWin = cloneWin; 
+else
+    if ~ismember(expt.cloneWin, windowPointers)
+        [cloneWin, cloneRect] = Screen('OpenWindow', cloneScreenNumber, [0 0 0], [10 10 screenWidthpx/2, screenHeightpx/2]); 
+    else
+        cloneWin = expt.cloneWin;
+    end
+end
+
+windowPointers = [win, cloneWin]; 
+winHeights = [rect(3), cloneRect(3)]; 
 % For spacebar to continue
 key2continue = 'space'; 
 continueKey = KbName(key2continue); 
@@ -104,10 +119,15 @@ if ~isfield(expt.instruct, 'space2continue')
 end
 key2pause = 'p'; 
 pauseKey = KbName(key2pause); 
+keyCode = zeros(1, 256); % Initiating variable so that it doesn't error out 
 
 % Set font parameters
-Screen('TextFont', win, 'Arial');
-Screen('TextSize', win, expt.instruct.txtparams.FontSize);
+for w = 1:length(windowPointers)
+    Screen('TextFont', windowPointers(w), 'Arial');
+    Screen('TextSize', win, expt.instruct.txtparams.FontSize(w));
+end
+
+ % Don't do this to clone because it is small 
 
 %% Set up audio devices 
 
@@ -115,7 +135,7 @@ Screen('TextSize', win, expt.instruct.txtparams.FontSize);
 InitializePsychSound;   % set up Psychtoolbox audio mex
 wasapiDevices = PsychPortAudio('GetDevices',13); % 13 is WASAPI
 deviceNames = {wasapiDevices.DeviceName}; 
-scarletts = find(contains(deviceNames, 'Focusrite') & ~contains(deviceNames, 'Loopback')); % TKTKTKTKT Berkeley/UCSF potential edit somewhere in here to make sure the right device is selected
+scarletts = find(contains(deviceNames, 'Focusrite') & ~contains(deviceNames, 'Loopback')); % 
 inputDevs = find([wasapiDevices.NrInputChannels] > 0); 
 inputScarlett = intersect(inputDevs, scarletts); 
 
@@ -134,15 +154,19 @@ h_speechInput = PsychPortAudio('Open', wasapiDevices(inputScarlett).DeviceIndex,
 % main this may be something like "we will now continue with the main phase of the experiment." 
 
 % Black screen
-Screen('FillRect', win, [0 0 0]);
-Screen('Flip',win); 
+for w = 1:length(windowPointers)
+    Screen('FillRect', windowPointers(w), [0 0 0]);
+    Screen('Flip',windowPointers(w)); 
+end
 
 % Instructions like "in this task, you will see words on the screen" 
 if isfield(expt.instruct, 'taskDetails')
     taskDetailsText = expt.instruct.taskDetails;  
-    DrawFormattedText(win,taskDetailsText,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
-    DrawFormattedText(win,expt.instruct.space2continue,'center',screenHeightpx*0.8,[255 255 255], expt.instruct.txtparams.wrapat);
-    Screen('Flip',win); 
+    for w = 1:length(windowPointers)
+        DrawFormattedText(windowPointers(w),taskDetailsText,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
+        DrawFormattedText(windowPointers(w),expt.instruct.space2continue,'center',winHeights(w)*0.8,[255 255 255], expt.instruct.txtparams.wrapat);
+        Screen('Flip',windowPointers(w)); 
+    end
     RestrictKeysForKbCheck(continueKey);
     ListenChar(1)
     tStart = GetSecs; 
@@ -155,8 +179,10 @@ if isfield(expt.instruct, 'taskDetails')
         if rt > expt.timing.wait4break, timedout = 1; end
     end
 
-    Screen('FillRect', win, [0 0 0]);
-    Screen('Flip',win); 
+    for w = 1:length(windowPointers)
+        Screen('FillRect', windowPointers(w), [0 0 0]);
+        Screen('Flip',windowPointers(w)); 
+    end
 
     clear keyIsDown 
     clear keyTime  
@@ -167,9 +193,11 @@ end
 % Instructions like "you will see words X, Y, and Z" 
 if isfield(expt.instruct, 'whichWords')
     whichWordsText = expt.instruct.whichWords;  
-    DrawFormattedText(win,whichWordsText,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
-    DrawFormattedText(win,expt.instruct.space2continue,'center',screenHeightpx*0.8,[255 255 255], expt.instruct.txtparams.wrapat);
-    Screen('Flip',win); 
+    for w = 1:length(windowPointers)
+        DrawFormattedText(windowPointers(w),whichWordsText,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
+        DrawFormattedText(windowPointers(w),expt.instruct.space2continue,'center',winHeights(w)*0.8,[255 255 255], expt.instruct.txtparams.wrapat);
+        Screen('Flip',windowPointers(w)); 
+    end
     RestrictKeysForKbCheck(continueKey);
     ListenChar(1)
     tStart = GetSecs; 
@@ -182,12 +210,16 @@ if isfield(expt.instruct, 'whichWords')
         if rt > expt.timing.wait4break, timedout = 1; end
     end
 
-    Screen('FillRect', win, [0 0 0]);
-    Screen('Flip',win); 
+    for w = 1:length(windowPointers)
+        Screen('FillRect', windowPointers(w), [0 0 0]);
+        Screen('Flip',windowPointers(w)); 
+    end
 end
 
-Screen('FillRect', win, [0 0 0]);
-Screen('Flip',win); 
+for w = 1:length(windowPointers)
+    Screen('FillRect', windowPointers(w), [0 0 0]);
+    Screen('Flip',windowPointers(w)); 
+end
 
 clear keyIsDown 
 clear keyTime  
@@ -197,9 +229,11 @@ pause(0.5); % Give variables time to clear
 % Introduction to which round you're doing (practice, full) 
 if isfield(expt.instruct, 'roundDetails')
     whichWordsText = expt.instruct.roundDetails;  
-    DrawFormattedText(win,whichWordsText,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
-    DrawFormattedText(win,expt.instruct.space2continue,'center',screenHeightpx*0.8,[255 255 255], expt.instruct.txtparams.wrapat);
-    Screen('Flip',win); 
+    for w = 1:length(windowPointers)
+        DrawFormattedText(windowPointers(w),whichWordsText,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
+        DrawFormattedText(windowPointers(w),expt.instruct.space2continue,'center',winHeights(w)*0.8,[255 255 255], expt.instruct.txtparams.wrapat);
+        Screen('Flip',windowPointers(w)); 
+    end
     RestrictKeysForKbCheck(continueKey);
     ListenChar(1)
     tStart = GetSecs; 
@@ -212,12 +246,16 @@ if isfield(expt.instruct, 'roundDetails')
         if rt > expt.timing.wait4break, timedout = 1; end
     end
 
-    Screen('FillRect', win, [0 0 0]);
-    Screen('Flip',win); 
+    for w = 1:length(windowPointers)
+        Screen('FillRect', windowPointers(w), [0 0 0]);
+        Screen('Flip',windowPointers(w)); 
+    end
 end
 
-Screen('FillRect', win, [0 0 0]);
-Screen('Flip',win); 
+for w = 1:length(windowPointers)
+    Screen('FillRect', windowPointers(w), [0 0 0]);
+    Screen('Flip',windowPointers(w)); 
+end
 
 clear keyIsDown 
 clear keyTime  
@@ -237,7 +275,7 @@ for itrial = 1:length(trials2run)  % for each trial
     thresholdRepeat = 0; 
     
     % Set a larger font size for the stimulus display 
-    Screen('TextSize', win, expt.instruct.txtparams.FontSize*2);
+    Screen('TextSize', win, expt.instruct.txtparams.FontSize(1)*2);
 
     while ~bGoodTrial
         % pause if 'p' is pressed ? 
@@ -246,8 +284,10 @@ for itrial = 1:length(trials2run)  % for each trial
         trial_index = trials2run(itrial);
                      
         % Black screen 
-        Screen('FillRect', win, [0 0 0]);
-        Screen('Flip',win); 
+        for w = 1:length(windowPointers)
+            Screen('FillRect', windowPointers(w), [0 0 0]);
+            Screen('Flip',windowPointers(w)); 
+        end
         
         % Start recording
         trialDur = expt.timing.stimdur; 
@@ -258,14 +298,33 @@ for itrial = 1:length(trials2run)  % for each trial
         txt2display = expt.listStimulusText{trial_index};         
         
         % display stimulus
-        DrawFormattedText(win,txt2display,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
-        Screen('Flip',win); 
+        for w = 1:length(windowPointers)
+            DrawFormattedText(windowPointers(w),txt2display,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
+            Screen('Flip',windowPointers(w)); 
+        end
         
-        % Pause for trial duration
-        WaitSecs(expt.timing.stimdur);
+        % Pause for trial duration. Listen for a p in the meantime
+        RestrictKeysForKbCheck(pauseKey);
+        ListenChar(1)
+        tStart = GetSecs; 
+        timedout = 0; 
+        while ~timedout
+            % Wait for spacebar
+            [ keyIsDown, keyTime, keyCode] = KbCheck;
+            if keyIsDown, break; end 
+            rt = keyTime - tStart; 
+            if rt > expt.timing.stimdur, timedout = 1; end
+        end
+        % WaitSecs(expt.timing.stimdur);
         
         % Stop capturing audio
         PsychPortAudio('Stop', h_speechInput);
+
+        % If they pressed p, show a pause 
+        if find(keyCode == 1) == pauseKey      
+            keyCode = pause_trials_ptb(expt, windowPointers, winHeights);    
+            ListenChar(0); 
+        end
         
         % Fetch all audio data out of the buffer - Needs to be empty before next trial. 
         audioData = PsychPortAudio('GetAudioData', h_speechInput);
@@ -293,17 +352,23 @@ for itrial = 1:length(trials2run)  % for each trial
         end
         
         % Clear screen 
-        Screen('FillRect', win, [0 0 0]);
-        Screen('Flip',win); 
+        for w = 1:length(windowPointers)
+            Screen('FillRect', windowPointers(w), [0 0 0]);
+            Screen('Flip',windowPointers(w)); 
+        end
           
         % Display a "please speak louder" a la PTB if not loud enough
         if ~bGoodTrial
             thresholdRepeat = thresholdRepeat + 1; 
-            DrawFormattedText(win,'Please try to speak a little louder','center','center',[255 255 0], expt.instruct.txtparams.wrapat);
-            Screen('Flip',win); 
+            for w = 1:length(windowPointers)
+                DrawFormattedText(windowPointers(w),'Please try to speak a little louder','center','center',[255 255 0], expt.instruct.txtparams.wrapat);
+                Screen('Flip',windowPointers(w)); 
+            end
             WaitSecs(1); 
-            Screen('FillRect', win, [0 0 0]);
-            Screen('Flip',win); 
+            for w = 1:length(windowPointers)
+                Screen('FillRect', windowPointers(w), [0 0 0]);
+                Screen('Flip',windowPointers(w)); 
+            end
         end        
         
         % save trial: use repeatTrialdirname if you've repeated, else use the normal one         
@@ -322,22 +387,49 @@ for itrial = 1:length(trials2run)  % for each trial
         % clean up data
         clear data
 
-        % add intertrial interval + jitter
-        pause(expt.timing.interstimdur + rand*expt.timing.interstimjitter);     
+        % add intertrial interval + jitter and also wait for a pause 
+        RestrictKeysForKbCheck(pauseKey);
+        ListenChar(1)
+        tStart = GetSecs; 
+        timedout = 0; 
+        while ~timedout
+            % Wait for spacebar
+            [ keyIsDown, keyTime, keyCode] = KbCheck;
+            if keyIsDown, break; end 
+            rt = keyTime - tStart; 
+            if rt > expt.timing.interstimdur + rand*expt.timing.interstimjitter, timedout = 1; end
+        end
+        % WaitSecs(expt.timing.stimdur);
+        
+        % Stop capturing audio
+        PsychPortAudio('Stop', h_speechInput);
+
+        % If they pressed p, show a pause 
+        if keyCode == pauseKey      
+            keyCode = pause_trials_ptb(expt, windowPointers, winHeights);    
+            ListenChar(0); 
+        end
+        % pause(expt.timing.interstimdur + rand*expt.timing.interstimjitter);     
 
     end
     % display break text
     if itrial == length(trials2run) && ismember(expt.listConds{itrial},{'practice','full'})
         breaktext = sprintf('Thank you!\n\nPlease wait.');
-        DrawFormattedText(win,breaktext,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
-        Screen('Flip',win); 
+        for w = 1:length(windowPointers)
+            DrawFormattedText(windowPointers(w),breaktext,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
+            Screen('Flip',windowPointers(w)); 
+        end
         WaitSecs(3); 
-        Screen('FillRect', win, [0 0 0]);
-        Screen('Flip',win); 
+        for w = 1:length(windowPointers)
+            Screen('FillRect', windowPointers(w), [0 0 0]);
+            Screen('Flip',windowPointers(w)); 
+        end
     elseif any(expt.breakTrials == trial_index)
         breaktext = sprintf('Time for a break!\n%d of %d trials done.\n\nPress the space bar to continue.',trials2run(itrial),expt.ntrials);
-        DrawFormattedText(win,breaktext,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
-        Screen('Flip',win); 
+        for w = 1:length(windowPointers)
+            DrawFormattedText(windowPointers(w),breaktext,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
+            Screen('Flip',windowPointers(w)); 
+        end
         RestrictKeysForKbCheck(continueKey);
         ListenChar(1)
         tStart = GetSecs; 
@@ -349,8 +441,10 @@ for itrial = 1:length(trials2run)  % for each trial
             rt = keyTime - tStart; 
             if rt > expt.timing.wait4break, timedout = 1; end
         end
-        Screen('FillRect', win, [0 0 0]);
-        Screen('Flip',win); 
+        for w = 1:length(windowPointers)
+            Screen('FillRect', windowPointers(w), [0 0 0]);
+            Screen('Flip',windowPointers(w)); 
+        end
         clear keyIsDown 
         clear keyTime  
         clear rt
