@@ -164,7 +164,7 @@ if isfield(expt.instruct, 'taskDetails')
     taskDetailsText = expt.instruct.taskDetails;  
     for w = 1:length(windowPointers)
         DrawFormattedText(windowPointers(w),taskDetailsText,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
-        DrawFormattedText(windowPointers(w),expt.instruct.space2continue,'center',winHeights(w)*0.8,[255 255 255], expt.instruct.txtparams.wrapat);
+        DrawFormattedText(windowPointers(w),expt.instruct.space2continue,'center',winHeights(w)*0.4,[255 255 255], expt.instruct.txtparams.wrapat);
         Screen('Flip',windowPointers(w)); 
     end
     RestrictKeysForKbCheck(continueKey);
@@ -195,7 +195,7 @@ if isfield(expt.instruct, 'whichWords')
     whichWordsText = expt.instruct.whichWords;  
     for w = 1:length(windowPointers)
         DrawFormattedText(windowPointers(w),whichWordsText,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
-        DrawFormattedText(windowPointers(w),expt.instruct.space2continue,'center',winHeights(w)*0.8,[255 255 255], expt.instruct.txtparams.wrapat);
+        DrawFormattedText(windowPointers(w),expt.instruct.space2continue,'center',winHeights(w)*0.4,[255 255 255], expt.instruct.txtparams.wrapat);
         Screen('Flip',windowPointers(w)); 
     end
     RestrictKeysForKbCheck(continueKey);
@@ -231,7 +231,7 @@ if isfield(expt.instruct, 'roundDetails')
     whichWordsText = expt.instruct.roundDetails;  
     for w = 1:length(windowPointers)
         DrawFormattedText(windowPointers(w),whichWordsText,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
-        DrawFormattedText(windowPointers(w),expt.instruct.space2continue,'center',winHeights(w)*0.8,[255 255 255], expt.instruct.txtparams.wrapat);
+        DrawFormattedText(windowPointers(w),expt.instruct.space2continue,'center',winHeights(w)*0.4,[255 255 255], expt.instruct.txtparams.wrapat);
         Screen('Flip',windowPointers(w)); 
     end
     RestrictKeysForKbCheck(continueKey);
@@ -322,7 +322,10 @@ for itrial = 1:length(trials2run)  % for each trial
 
         % If they pressed p, show a pause 
         if find(keyCode == 1) == pauseKey      
-            keyCode = pause_trials_ptb(expt, windowPointers, winHeights);    
+            keyCode = pause_trials_ptb(expt, windowPointers, winHeights);  
+            clear keyIsDown 
+            clear keyTime  
+            clear rt
             ListenChar(0); 
         end
         
@@ -399,17 +402,16 @@ for itrial = 1:length(trials2run)  % for each trial
             rt = keyTime - tStart; 
             if rt > expt.timing.interstimdur + rand*expt.timing.interstimjitter, timedout = 1; end
         end
-        % WaitSecs(expt.timing.stimdur);
-        
-        % Stop capturing audio
-        PsychPortAudio('Stop', h_speechInput);
 
         % If they pressed p, show a pause 
-        if keyCode == pauseKey      
-            keyCode = pause_trials_ptb(expt, windowPointers, winHeights);    
+        if find(keyCode == 1) == pauseKey      
+            keyCode = pause_trials_ptb(expt, windowPointers, winHeights);  
+            clear keyIsDown 
+            clear keyTime  
+            clear rt
             ListenChar(0); 
         end
-        % pause(expt.timing.interstimdur + rand*expt.timing.interstimjitter);     
+
 
     end
     % display break text
@@ -448,7 +450,7 @@ for itrial = 1:length(trials2run)  % for each trial
         clear keyIsDown 
         clear keyTime  
         clear rt
-        pause(0.5); % Give variables time to clear 
+        pause(expt.timing.pausebuffer); % Give variables time to clear 
     end
     
 end
