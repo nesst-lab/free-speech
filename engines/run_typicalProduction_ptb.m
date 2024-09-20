@@ -193,11 +193,16 @@ end
 % Instructions like "you will see words X, Y, and Z" 
 if isfield(expt.instruct, 'whichWords')
     whichWordsText = expt.instruct.whichWords;  
-    for w = 1:length(windowPointers)
-        DrawFormattedText(windowPointers(w),whichWordsText,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
-        DrawFormattedText(windowPointers(w),expt.instruct.space2continue,'center',winHeights(w)*0.4,[255 255 255], expt.instruct.txtparams.wrapat);
-        Screen('Flip',windowPointers(w)); 
-    end
+
+    % Participant sees words
+    DrawFormattedText(win,whichWordsText,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
+    Screen('Flip',win); 
+    
+    % Experimenter sees instructions on what to say
+    experimenterText = 'Read the main instructions to the participant.'; 
+    DrawFormattedText(cloneWin,experimenterText,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
+    DrawFormattedText(cloneWin,expt.instruct.space2continue,'center',winHeights(2)*0.4,[255 255 255], expt.instruct.txtparams.wrapat);
+    Screen('Flip',cloneWin); 
     RestrictKeysForKbCheck(continueKey);
     ListenChar(1)
     tStart = GetSecs; 
