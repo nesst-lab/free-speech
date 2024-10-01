@@ -37,6 +37,11 @@ if nargin < 3 || isempty(winHeights)
     end
 end
 
+for w = 1:length(windowPointers)
+    Screen('TextFont', windowPointers(w), 'Arial');
+    Screen('TextSize', windowPointers(w), 30);
+end
+
 %% 
 key2continue = 'space'; 
 continueKey = KbName(key2continue); 
@@ -44,7 +49,7 @@ continueKey = KbName(key2continue);
 %% Show pause text 
 for w = 1:length(windowPointers)
     DrawFormattedText(windowPointers(w),expt.instruct.pausetxt,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
-    DrawFormattedText(windowPointers(w),expt.instruct.space2continue,'center',winHeights(w)*0.8,[255 255 255], expt.instruct.txtparams.wrapat);
+    DrawFormattedText(windowPointers(w),expt.instruct.space2continue,'center',winHeights(w)*0.6,[255 255 255], expt.instruct.txtparams.wrapat);
     Screen('Flip',windowPointers(w)); 
 end
 
@@ -64,7 +69,6 @@ end
 %% When done with pause, show resume
 for w = 1:length(windowPointers)
     DrawFormattedText(windowPointers(w),expt.instruct.resumetxt,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
-    DrawFormattedText(windowPointers(w),expt.instruct.space2continue,'center',winHeights(w)*0.8,[255 255 255], expt.instruct.txtparams.wrapat);
     Screen('Flip',windowPointers(w)); 
 end
 
