@@ -64,7 +64,12 @@ elseif contains(trackingFileFolder, '/') || contains(trackingFileFolder, '\')
 else
     % If you provided a folder name without the rest of the path, and it is not experiment_helpers, it is that experiment's
     % folder in current-studies
-    trackingFilePath = fullfile(get_gitPath('current-studies'), trackingFileFolder); 
+    exptLoadPath = get_exptLoadPath; 
+    if contains(exptLoadPath, 'Missouri')
+        trackingFilePath = fullfile(get_gitPath('study-code'), trackingFileFolder); 
+    else
+        trackingFilePath = fullfile(get_gitPath('current-studies'), trackingFileFolder); 
+    end
 end
 
 end

@@ -92,7 +92,12 @@ end
 if strcmp(trackingFileDir, 'experiment_helpers')
     leadingDir = 'free-speech'; 
 else
-    leadingDir = 'current-studies'; 
+    exptLoadPath = get_exptLoadPath; 
+    if contains(exptLoadPath, 'Missouri')
+        leadingDir = 'study-code';  % **** RK CHANGE FOR NeSST 
+    else
+        leadingDir = 'current-studies'; 
+    end
 end
 ostWorking = fullfile(get_trackingFilePath(trackingFileDir), [trackingFileName 'Working.ost']); 
 if exist(ostWorking,'file') ~= 2
@@ -136,7 +141,7 @@ for itrial = 1:ntrials
     % Assume that nothing exists. It's fine for now...   
     sigproc_params = get_sigproc_defaults;
     plot_params = get_plot_defaults;
-    plot_params.hzbounds4plot = [0 10000]; % to find s/z noise more easily 
+    plot_params.hzbounds4plot = [0 8000]; % to find s/z noise more easily 
     
     event_params = get_event_defaults;
     sigmat = [];
