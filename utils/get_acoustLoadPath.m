@@ -4,7 +4,12 @@ function [dataPath] = get_acoustLoadPath(exptName,sid,varargin)
 if nargin < 2 || isempty(sid) % need 'isempty' here because '[]' is numeric
     sid = [];
 elseif isnumeric(sid)
-    sid = sprintf('sp%03d',sid);
+    if strcmp(exptName, 'cerebTimeAdapt', 'taimComp', 'timitate')
+        sid = sprintf('sp%03d',sid);
+    else
+        % Adjustment for NeSST Lab codes
+        sid = sprintf('nh%04d',sid); 
+    end
 elseif ~ischar(sid)
     error('Subject ID must be a number or character string.')
 end
