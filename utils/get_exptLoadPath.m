@@ -8,7 +8,7 @@ bjorndahlComputers = {'P-CBJORN-L'};
 if ispc
     % Adjustment for using at NeSST Lab
     computerName = getenv('COMPUTERNAME');
-    if contains(computerName, 'LEWIS221') || ismember(computerName, nesstComputers)
+    if contains(computerName, 'LEWIS221') || contains(computerName, 'CLARK6E') || ismember(computerName, nesstComputers)
         username = getenv('USERNAME'); 
         if strcmp(computerName, 'WHITTAKER')
             % Dumb workaround for Whittaker
