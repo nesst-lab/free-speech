@@ -1,4 +1,4 @@
-function [keyCode] = pause_trials_ptb(expt, windowPointers, winHeights)
+function [keyCode] = pause_trials_ptb(expt, windowPointers, winHeights, txtcolor, wincolor)
 % A function to put pauses into PTB experiment trial loops 
 % 
 % Needs the following: 
@@ -37,6 +37,10 @@ if nargin < 3 || isempty(winHeights)
     end
 end
 
+if nargin < 4 || isempty(txtcolor), txtcolor = [255 255 255]; end % default white
+
+if nargin < 5 || isempty(wincolor), wincolor = [0 0 0]; end
+
 for w = 1:length(windowPointers)
     Screen('TextFont', windowPointers(w), 'Arial');
     Screen('TextSize', windowPointers(w), 30);
@@ -48,8 +52,8 @@ continueKey = KbName(key2continue);
 
 %% Show pause text 
 for w = 1:length(windowPointers)
-    DrawFormattedText(windowPointers(w),expt.instruct.pausetxt,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
-    DrawFormattedText(windowPointers(w),expt.instruct.space2continue,'center',winHeights(w)*0.6,[255 255 255], expt.instruct.txtparams.wrapat);
+    DrawFormattedText(windowPointers(w),expt.instruct.pausetxt,'center','center',txtcolor, expt.instruct.txtparams.wrapat);
+    DrawFormattedText(windowPointers(w),expt.instruct.space2continue,'center',winHeights(w)*0.6,txtcolor, expt.instruct.txtparams.wrapat);
     Screen('Flip',windowPointers(w)); 
 end
 
@@ -68,7 +72,7 @@ end
 
 %% When done with pause, show resume
 for w = 1:length(windowPointers)
-    DrawFormattedText(windowPointers(w),expt.instruct.resumetxt,'center','center',[255 255 255], expt.instruct.txtparams.wrapat);
+    DrawFormattedText(windowPointers(w),expt.instruct.resumetxt,'center','center',txtcolor, expt.instruct.txtparams.wrapat);
     Screen('Flip',windowPointers(w)); 
 end
 
@@ -77,7 +81,7 @@ WaitSecs(2);
 
 % Then make screen blank 
 for w = 1:length(windowPointers)
-    Screen('FillRect', windowPointers(w), [0 0 0]);
+    Screen('FillRect', windowPointers(w), wincolor);
     Screen('Flip',windowPointers(w)); 
 end
 
