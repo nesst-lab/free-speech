@@ -40,6 +40,8 @@ if nargin < 2 || isempty(windowPointers)
     windowPointers = Screen('Windows'); 
 end
 
+nWindows = length(windowPointers); 
+
 if nargin < 3 || isempty(winHeights)
     for w = 1:length(windowPointers)
         [~, height] = Screen('WindowSize', windowPointers(w)); 
@@ -55,7 +57,9 @@ if nargin < 6 || isempty(wincolor), wincolor = [0 0 0]; end
 
 if nargin < 7 || isempty(key2continue), key2continue = 'space'; end
 
-for w = 1:length(windowPointers)
+%% 
+
+for w = 1:nWindows
     Screen('TextFont', windowPointers(w), 'Arial');
     Screen('TextSize', windowPointers(w), 30);
 end
@@ -65,11 +69,18 @@ end
 continueKey = KbName(key2continue); 
 
 %% Show pause text 
-for w = 1:length(windowPointers)
-    DrawFormattedText(windowPointers(w),expt.instruct.pausetxt,'center','center',txtcolor, expt.instruct.txtparams.wrapat);
-    DrawFormattedText(windowPointers(w),space2continuetxt,'center',winHeights(w)*0.6,txtcolor, expt.instruct.txtparams.wrapat);
+for w = 1:nWindows
+    DrawFormattedText(windowPointers(w),expt.instruct.pausetxt,'center','center',txtcolor, expt.instruct.txtparams.wrapat(1)); % this is maybe a dumb fix... but I don't think it will break anything
+    DrawFormattedText(windowPointers(w),space2continuetxt,'center',winHeights(w)*0.6,txtcolor, expt.instruct.txtparams.wrapat(1));
     Screen('Flip',windowPointers(w)); 
 end
+
+try
+    DrawFormattedText(expt.ctrlWin, expt.ctrlInstruct.pausetxt, 'center', 'center', [255 255 255], expt.ctrlInstruct.txtparams.wrapat); 
+    Screen('Flip', expt.ctrlWin); 
+catch
+end
+
 
 %% Then wait for spacebar
 pause(0.5); % Maybe it is triggering too fast for the lift up of the key? 
@@ -87,8 +98,14 @@ end
 
 %% When done with pause, show resume
 for w = 1:length(windowPointers)
-    DrawFormattedText(windowPointers(w),expt.instruct.resumetxt,'center','center',txtcolor, expt.instruct.txtparams.wrapat);
+    DrawFormattedText(windowPointers(w),expt.instruct.resumetxt,'center','center',txtcolor, expt.instruct.txtparams.wrapat(1));
     Screen('Flip',windowPointers(w)); 
+end
+
+try
+    DrawFormattedText(expt.ctrlWin, expt.ctrlInstruct.resumetxt, 'center', 'center', [255 255 255], expt.ctrlInstruct.txtparams.wrapat); 
+    Screen('Flip', expt.ctrlWin); 
+catch
 end
 
 % Let the resume message linger 
@@ -98,6 +115,12 @@ WaitSecs(2);
 for w = 1:length(windowPointers)
     Screen('FillRect', windowPointers(w), wincolor);
     Screen('Flip',windowPointers(w)); 
+end
+
+try
+    Screen('FillRect', expt.ctrlWin, [0 0 0]);
+    Screen('Flip',expt.ctrlWin); 
+catch
 end
 
 % And hold for a buffer so people can get ready 
