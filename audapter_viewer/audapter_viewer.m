@@ -1713,7 +1713,7 @@ hbutton.plotNewTrials = uicontrol(p.guidata.trialPanel,'Style','pushbutton',...
             delete(oax); 
         end
         clear trial_axes h_rms h_rms_rat h_dRms h_ost h_ostref h_editost_ref audTAxis
-        [trial_axes,h_rms,h_rms_rat,h_dRms,h_dRms_rat,h_ost,h_ostref,h_editost_ref,audTAxis] = new_trial_axes(y,p,trials,ostStatus,heuristic,ost_calc);
+        [trial_axes,h_rms,h_rms_rat,h_dRms,h_dRms_rat,h_ost,h_ostref,h_editost_ref,audTAxis] = new_trial_axes(y,p,trials,ostStatus,heuristic,ost_calc,logshim);
     
         clear output_trial_axes h_outputOst output_audTAxis
         [output_trial_axes,h_outputOst,output_audTAxis,h_formantsIn_1,h_formantsIn_2,h_formantsOut_1,h_formantsOut_2] = new_output_trial_axes(y,x,p,trackingFileDir,trackingFileName,trials,signalOut_calc, logshim); 
@@ -3438,7 +3438,7 @@ warning('off','MATLAB:audiovideo:audioplayer:noAudioOutputDevice')
                 
                 % Spectrogram
                 [s, f, t] = spectrogram(axdat{1}, 256, 192, 1024, fs);
-                imagesc(ax, t, f, 10 * log10(abs(s) + logshim));
+                imagesc(ax, t, f, 10 * log10(abs(s) + logshim)); % ERROR 
                 set(gca, 'XTickMode', 'auto', 'XTickLabelMode', 'auto')
                 ax.YDir = 'normal';
                 ax.YLim = [0 6000]; 
