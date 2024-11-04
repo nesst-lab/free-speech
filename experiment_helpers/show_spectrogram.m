@@ -38,7 +38,9 @@ set(gca, 'XLim', [t(1), t(end)]);
 colormap(flipud(gray));
 min_vals = min(log10(abs(s)));
 max_vals = max(log10(abs(s)));
-caxis([min(min_vals(~isinf(min_vals)))-10 max(max_vals(~isinf(max_vals)))+10])
+
+% Okay, so to get more contrast you want the min and the max to be closer together, essentially
+caxis([min(min_vals(~isinf(min_vals)))+69 max(max_vals(~isinf(max_vals)))])
 
 
 return
