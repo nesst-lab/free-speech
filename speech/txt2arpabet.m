@@ -31,7 +31,8 @@ ih = ismember(txtcell,{'ih' 'I' 'bid' 'bin' 'bink' 'bit'  'rid' 'grin' 'yillow' 
     'BLACKzipper' 'BLACKsipper' 'BLUEzipper' 'BLUEsipper' 'BIGzipper' 'BIGsipper'});
 iy = ismember(txtcell,{'iy', ...
     'bead','bean','bee','bleed','C','creed','deer', 'dear','deal','deem','ease','eat','ee','eep','Eve','green','i','kreen','pea',...
-    'reed','scene','sea','seat','see','seep','she','sheep','sheet','Sie','teal','tear','teem', 'team', 'tier','vee','vie','wie','Wie','Yves','zee','Z'});
+    'reed','scene','sea','seat','see','seep','she','sheep','sheet','Sie','teal','tear','teem', 'team', 'tier','vee','vie','wie','Wie',...
+    'yi1', 'yi2', 'yi12 ding4', 'Yves','zee','Z'});
 ow = ismember(txtcell,{'ow' 'o' 'oh' 'blow' 'bode' 'show' 'shore' 'so' 'sore'});
 uw = ismember(txtcell,{'uw' 'blue' 'booed' 'boon' 'dude' 'food' 'groom' 'oo' 'plume' 'plue' 'rude' 'sue' 'suit' 'soon' 'shoe' 'shoot' 'shoes' 'u'});
 er = ismember(txtcell,{'er' 'bird' 'blur'});
