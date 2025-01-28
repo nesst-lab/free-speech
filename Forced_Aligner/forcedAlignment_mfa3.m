@@ -1,4 +1,4 @@
-function [] =  forcedAlignment_mfa3(dataPath,exptfield,genfilesOrAlign,language,dictionary)
+function [] =  forcedAlignment_mfa3(dataPath,exptfield,genfilesOrAlign,buffer,language,dictionary)
 % FORCEDALIGNMENT_MFA3.0 Use the montreal forced aligner (v3.0+) on experiment data
 %   FORCEDALIGNMENT_MFA3.0(DATAPATH,EXPTFIELD,ALIGNONLY, LANGUAGE)
 %
@@ -17,10 +17,12 @@ function [] =  forcedAlignment_mfa3(dataPath,exptfield,genfilesOrAlign,language,
 % 
 %       3 genfilesOrAlign     'gen', 'align', or 'both'. Generate alignment structures, align already made structures, or
 %       both. 
-%
-%       4 language      language that you want to use. Defaults to english_us_arpa
 % 
-%       5 dictionary    dictionary that you want to use. Defaults to whatever language is. 
+%       4 buffer        which field you want to use---signalIn, signalOut, signalEma (e.g.). Defaults to signalIn
+%
+%       5 language      language that you want to use. Defaults to english_us_arpa
+% 
+%       6 dictionary    dictionary that you want to use. Defaults to whatever language is. 
 % 
 %   Outputs: 
 %       - files in PostAlignment folder in dataPath with alignments
@@ -63,8 +65,9 @@ end
 dbstop if error
 if nargin < 1 || isempty(dataPath), dataPath = cd; end
 if nargin < 3 || isempty(genfilesOrAlign), genfilesOrAlign = 'both'; end
-if nargin < 4 || isempty(language), language = 'english_us_arpa'; end % this might be a new update 
-if nargin < 5 || isempty(dictionary), dictionary = language; end
+if nargin < 4 || isempty(buffer), buffer = 'signalIn'; end
+if nargin < 5 || isempty(language), language = 'english_us_arpa'; end % this might be a new update 
+if nargin < 6 || isempty(dictionary), dictionary = language; end
 
 % Load expt file and establish list of stimuli
 load(fullfile(dataPath,'expt.mat'), 'expt');
@@ -115,7 +118,7 @@ if ~strcmp(genfilesOrAlign, 'align')
     
     for i=1:length(data)
         word = upper(string(wordlist(i)));
-        signalData = data(i).signalIn;
+        signalData = data(i).(buffer);
         
         %create lab file
         modifiedTxtName = fullfile(prealignFolder,sprintf('%s%d%s','AudioData_',i,'.lab'));
