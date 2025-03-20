@@ -49,7 +49,7 @@ subj = expt.snum;
 ntrials = expt.ntrials; 
 
 % Get number of files in VUV folder 
-vuvPath = fullfile(dataPath, 'VUV'); 
+vuvPath = fullfile(dataPath, 'vuvTG'); 
 vuvList = dir(vuvPath); 
 
 vuvListNames = {vuvList.name}; 
@@ -113,20 +113,39 @@ for i = 1:nVuvFiles
     end
 
     % Get the v/u status of the beginning of the segment 
-    for s = 1:length(segStarts)
-        for v = 1:height(voicedTimes)
+    for s = 1:length(segStarts) % Loop through all your segments that are being measured in the trial (all fricatives)
+        for v = 1:height(voicedTimes) % height of voicedTimes is the number of voiced intervals there are in the whole trial
             if segStarts(s) >= voicedTimes(v,1) && segStarts(s) < voicedTimes(v,2)
+                % If the start of your segment is after the first voiced interval's start time, AND before its end time
+                % (between the start and end of it), that means that your segment is starting voiced. So vu_segStart should
+                % be labeled as v
                 vu_segStart(s) = 'v'; 
-                vu_segStart_dur(s) = voicedTimes(v,2) - segStarts(s); 
-                continue; 
+                if segEnds(s) < voicedTimes(v,2) 
+                    % If the end of the segment occurs before your voicing interval ends
+                    % And you're not in the very last segment (in which case this situation should be impossible anyway I
+                    % guess) 
+                    vu_segStart_dur(s) = segEnds(s) - segStarts(s); 
+                else
+                    vu_segStart_dur(s) = voicedTimes(v,2) - segStarts(s); 
+                end
+
+                % Get the duration of the voiced component at the start. end of the voiced interval - start of the segment
+                break; 
             end
         end
 
         for u = 1:height(unvoicedTimes)
             if segStarts(s) >= unvoicedTimes(u,1) && segStarts(s) < unvoicedTimes(u,2)
                 vu_segStart(s) = 'u'; 
-                vu_segStart_dur(s) = unvoicedTimes(u,2) - segStarts(s); 
-                continue; 
+                if segEnds(s) < unvoicedTimes(u,2) 
+                    % If the end of the segment occurs before your unvoicing interval ends
+                    % And you're not in the very last segment (in which case this situation should be impossible anyway I
+                    % guess) 
+                    vu_segStart_dur(s) = segEnds(s) - segStarts(s); 
+                else
+                    vu_segStart_dur(s) = unvoicedTimes(u,2) - segStarts(s); 
+                end
+                break; 
             end
         end
     end
@@ -135,30 +154,54 @@ for i = 1:nVuvFiles
     for s = 1:length(segEnds)
         for v = 1:height(voicedTimes)
             if segEnds(s) >= voicedTimes(v,1) && segEnds(s) < voicedTimes(v,2)
+                % If your seg end is after the start of a voiced time & before the end of that same voiced time 
+                % then it ends in v also 
                 vu_segEnd(s) = 'v'; 
-                vu_segEnd_dur(s) = segEnds(s) - voicedTimes(v,1);  
-                continue; 
+                if segStarts(s) > voicedTimes(v,1) 
+                    % If the end of the segment occurs before your voicing interval ends
+                    % And you're not in the very last segment (in which case this situation should be impossible anyway I
+                    % guess) 
+                    vu_segEnd_dur(s) = segEnds(s) - segStarts(s); 
+                else
+                    vu_segEnd_dur(s) = segEnds(s) - voicedTimes(v,1); 
+                end
+                break; 
             end
         end
 
         for u = 1:height(unvoicedTimes)
             if segEnds(s) >= unvoicedTimes(u,1) && segEnds(s) < unvoicedTimes(u,2)
                 vu_segEnd(s) = 'u'; 
-                vu_segEnd_dur(s) = segEnds(s) - unvoicedTimes(u,1); 
-                continue; 
+                if segStarts(s) > unvoicedTimes(u,1) 
+                    % If the end of the segment occurs before your voicing interval ends
+                    % And you're not in the very last segment (in which case this situation should be impossible anyway I
+                    % guess) 
+                    vu_segEnd_dur(s) = segEnds(s) - segStarts(s); 
+                else
+                    vu_segEnd_dur(s) = segEnds(s) - unvoicedTimes(u,1); 
+                end
+                break; 
             end
         end
     end
 
     % Get things that happen between the beginning and the end
     for s = 1:length(segStarts) 
-        vuvStarts_OI = find(vuvStarts > segStarts(s) & vuvStarts < segEnds(s)); 
+        vuvStarts_OI = find(vuvStarts > segStarts(s) & vuvStarts < segEnds(s)); % finding all the v/u labels that are within the segment time
         vuv_starts{s} = [segStarts(s) vuvStarts(vuvStarts_OI)]; % don't actually need end times, really
         vuvStarts_OI = vuvStarts_OI(1:end-1); 
         midvu_seq = [vuvLabels{vuvStarts_OI}]; 
         midvu_seq_durs = [vuvEnds(vuvStarts_OI) - vuvStarts(vuvStarts_OI)]; 
-        vuv_seq{s} = [vu_segStart(s) lower(midvu_seq) vu_segEnd(s)];         
-        vuv_durs{s} = [vu_segStart_dur(s) midvu_seq_durs vu_segEnd_dur(s)]; 
+
+        if isempty(vuvStarts_OI) 
+            % If you don't have anything between your start and end (i.e., you have a fully voiced or unvoiced seg) 
+            vuv_seq{s} = unique([vu_segStart(s) vu_segEnd(s)]); 
+            vuv_durs{s} = unique([vu_segStart_dur(s) vu_segEnd_dur(s)]); 
+        else
+            vuv_seq{s} = [vu_segStart(s) lower(midvu_seq) vu_segEnd(s)];         
+            vuv_durs{s} = [vu_segStart_dur(s) midvu_seq_durs vu_segEnd_dur(s)]; 
+        end
+
         vuv_percs{s} = vuv_durs{s} / segDurs(s); 
         uints = find(vuv_seq{s} == 'u'); 
         vints = find(vuv_seq{s} == 'v'); 
@@ -184,7 +227,9 @@ end
 
 
 %%
-
+if bSave
+    save(fullfile(dataPath, 'vuvData.mat'), 'vuvData'); 
+end
 
 
 
