@@ -1,4 +1,4 @@
-function [vuvData] = add_voiceUnvoiceData(dataPath, segs, bSave)
+function [vuvData] = add_voiceUnvoiceData(dataPath, segs, bSave, trials)
 % Function to get voice/unvoice percentage data from textgrids and put into dataVals-like table 
 % 
 % Inputs: 
@@ -56,15 +56,19 @@ vuvListNames = {vuvList.name};
 nVuvFiles = sum(contains(vuvListNames, 'vuv', 'IgnoreCase', true)); % Get the number of trials with VUV in the name 
 vuvFiles = {vuvListNames{find(contains(vuvListNames, 'vuv', 'IgnoreCase', true))}}; 
 
+if nargin < 4 || isempty(trials), trials = 1:nVuvFiles; end
+
 
 %% Loop through VUV files 
 
 vuvData = []; 
-for i = 1:nVuvFiles
-    vuvFileName = vuvFiles{i}; 
+for i = trials
+    % vuvFileName = vuvFiles{i}; 
+    trialNo = i; 
+    vuvFileName = sprintf('AudioData_%d_VUV.TextGrid', trialNo); 
     splitFN = split(vuvFileName, '_'); 
-    trialNo = splitFN{2}; % It should always be in 2 position 
-    trialNo = str2double(trialNo); 
+    % trialNo = splitFN{2}; % It should always be in 2 position 
+    % trialNo = str2double(trialNo); 
     vuvTG = tgRead(fullfile(vuvPath, vuvFileName)); 
 
     % Find the tier that is called vuv (it doesn't matter what position it's in) 
@@ -165,6 +169,7 @@ for i = 1:nVuvFiles
                 else
                     vu_segEnd_dur(s) = segEnds(s) - voicedTimes(v,1); 
                 end
+                lastVU_startTime(s) = voicedTimes(v,1); 
                 break; 
             end
         end
@@ -180,6 +185,7 @@ for i = 1:nVuvFiles
                 else
                     vu_segEnd_dur(s) = segEnds(s) - unvoicedTimes(u,1); 
                 end
+                lastVU_startTime(s) = unvoicedTimes(u,1); 
                 break; 
             end
         end
@@ -187,16 +193,19 @@ for i = 1:nVuvFiles
 
     % Get things that happen between the beginning and the end
     for s = 1:length(segStarts) 
-        vuvStarts_OI = find(vuvStarts > segStarts(s) & vuvStarts < segEnds(s)); % finding all the v/u labels that are within the segment time
-        vuv_starts{s} = [segStarts(s) vuvStarts(vuvStarts_OI)]; % don't actually need end times, really
-        vuvStarts_OI = vuvStarts_OI(1:end-1); 
+        vuvStarts_OI = find(vuvStarts > segStarts(s) & vuvEnds < segEnds(s)); % finding all the v/u labels that are within the segment time (start and end within the segment) 
+        vuv_starts{s} = [segStarts(s) vuvStarts(vuvStarts_OI) lastVU_startTime(s)]; % start times for VUVs. Absolute start is the start of the segment. 
+        % Then should be the starts of the VUVs that are fully contained. 
+        % Then it should be the start time of the very last interval (which will most likely bleed off the edge)
+        % vuvStarts_OI = vuvStarts_OI(1:end-1); 
         midvu_seq = [vuvLabels{vuvStarts_OI}]; 
         midvu_seq_durs = [vuvEnds(vuvStarts_OI) - vuvStarts(vuvStarts_OI)]; 
 
         if isempty(vuvStarts_OI) 
-            % If you don't have anything between your start and end (i.e., you have a fully voiced or unvoiced seg) 
-            vuv_seq{s} = unique([vu_segStart(s) vu_segEnd(s)]); 
-            vuv_durs{s} = unique([vu_segStart_dur(s) vu_segEnd_dur(s)]); 
+            % If you don't have anything between your start and end (i.e., you have a fully voiced or unvoiced seg OR you
+            % have a vu/uv---nothing in the middle) 
+            vuv_seq{s} = unique([vu_segStart(s) vu_segEnd(s)], 'stable'); 
+            vuv_durs{s} = unique([vu_segStart_dur(s) vu_segEnd_dur(s)], 'stable'); 
         else
             vuv_seq{s} = [vu_segStart(s) lower(midvu_seq) vu_segEnd(s)];         
             vuv_durs{s} = [vu_segStart_dur(s) midvu_seq_durs vu_segEnd_dur(s)]; 
