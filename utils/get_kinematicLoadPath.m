@@ -14,4 +14,4 @@ elseif ~ischar(sid)
     error('Subject ID must be a number or character string.')
 end
 
-dataPath = get_exptLoadPath(exptName,'kinematicdata',sid,varargin{:});
+dataPath = get_kExptLoadPath(exptName,'kinematicdata',sid,varargin{:});
