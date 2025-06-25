@@ -1,4 +1,4 @@
-function [htracks,hsub] = plot_rawDurs(dataVals,segField,grouping,trialset,parent,expt)
+function [htracks,hsub] = plot_rawDurs(dataValsIn, dataValsOut,segField,grouping,trialset,parent,expt)
 %PLOT_RAWDURS           Plot the durations of segments of each trial. Used in check_timingDataVals
 %   PLOT_RAWFMTTRACKS(DATAVALS,GROUPING,TRIALSET,PARENT) plots the first and
 %   second formant tracks from each trial in TRIALSET in the figure or
@@ -6,27 +6,30 @@ function [htracks,hsub] = plot_rawDurs(dataVals,segField,grouping,trialset,paren
 %   which data should be grouped; e.g. GROUPING = 'vowel' will create a
 %   separate subplot for each vowel.
 
-if nargin < 3 || isempty(grouping), grouping = 'word'; end
-if nargin < 1 || isempty(dataVals)
+if nargin < 4 || isempty(grouping), grouping = 'word'; end
+if nargin < 1 || isempty(dataValsIn)
     % RK: I don't like this but it should really never be called without inputs so I'll leave it for now. June 2025
     fprintf('Loading dataVals from current directory...')
-    load dataVals.mat;
+    load dataVals_signalIn.mat;
     fprintf(' done.\n')
+end
+if nargin < 5 || isempty(trialset), trialset = [dataValsIn.trial]; end
+if nargin < 6 || isempty(parent), h = figure('Units','normalized', 'Position',[.01 .25 .98 .5]); parent = h; end
+if nargin < 7 || isempty(expt)
     if exist(fullfile(cd,'expt.mat'),'file')
         fprintf('Loading expt from current directory...')
         load expt.mat;
         fprintf(' done.\n')
     end
 end
-if nargin < 4 || isempty(trialset), trialset = [dataVals.token]; end
-if nargin < 5 || isempty(parent), h = figure('Units','normalized', 'Position',[.01 .25 .98 .5]); parent = h; end
 
 %%
 
-durColor = [0 0 1]; 
+durColor = [25 180 85]./255; 
+pertColor = [0.5 0.2 0.6]; 
 %%
 
-groups = unique([dataVals.(grouping)]);
+groups = unique([dataValsIn.(grouping)]);
 
 % RPK for non-compressed display with fewer words 
 if length(groups) < 4
@@ -43,21 +46,27 @@ for g = 1:length(groups)
     
     %collect the indices of dataVals where the trialset and token values
     %are the same
-    [~,inds] =  ismember(trialset, [dataVals.token]);
+    [~,inds] =  ismember(trialset, [dataValsIn.trial]);
     
     for i=inds % set of trials (jump, short, late, etc.) 
 %         disp(i)
         if iscell(groupId)
-            bInGroup = strcmp(dataVals(i).(grouping), groupId);
+            bInGroup = strcmp(dataValsIn(i).(grouping), groupId);
         else
-            bInGroup = dataVals(i).(grouping) == groupId; 
+            bInGroup = dataValsIn(i).(grouping) == groupId; 
         end
-        if (~isfield(dataVals,'bExcl') || ~dataVals(i).bExcl) && bInGroup
+        if (~isfield(dataValsIn,'bExcl') || ~dataValsIn(i).bExcl) && bInGroup
             % Plot that trials' duration 
-            htracks(g).dur(ihandle) = plot(dataVals(i).trial, dataVals(i).(segField),'Marker', 'o', 'LineStyle', 'none', ...
-                'Color', durColor); 
-            set(htracks(g).dur(ihandle),'Tag',num2str(dataVals(i).trial),'YdataSource',segField)
+            yyaxis left; 
+            htracks(g).dur(ihandle) = plot(dataValsIn(i).trial, dataValsIn(i).(segField),'Marker', 'o', 'LineStyle', 'none', ...
+                'MarkerFaceColor', durColor, 'MarkerEdgeColor', durColor - 0.05,'MarkerSize',5); 
+            set(htracks(g).dur(ihandle),'Tag',num2str(dataValsIn(i).trial),'YdataSource',segField)
             hold on; 
+            yyaxis right; 
+            pert = dataValsOut(i).(segField) - dataValsIn(i).(segField); 
+            htracks(g).pert(ihandle) = plot(dataValsIn(i).trial, pert, 'Marker', '^', 'LineStyle', 'none', ...
+                'MarkerFaceColor', pertColor, 'MarkerEdgeColor', pertColor - 0.05,'MarkerSize',5); 
+            set(htracks(g).pert(ihandle),'Tag',num2str(dataValsIn(i).trial),'YdataSource',segField)
             
             ihandle = ihandle+1;
         end
@@ -70,9 +79,21 @@ for g = 1:length(groups)
     else
         titlesuffix = [];
     end
+    
     title(sprintf('%s %d%s',grouping,groupId,titlesuffix))
     xlabel('trial')
-    ylabel('duration (s)')
+    
+    yyaxis left
+    ax = gca; 
+    ylabel('duration (s)', 'Color', durColor); 
+    ax.YColor = durColor; 
+    ylim([min([dataValsIn(inds).(segField)]) - 0.03 max([dataValsIn(inds).(segField)]) + 0.03]); 
+    
+    yyaxis right
+    ax = gca; 
+    ylabel('perturbation (s)', 'Color', pertColor); 
+    ax.YColor = pertColor; 
+    ylim([min(expt.pertMag) - 0.01 max(expt.pertMag) + 0.05]); 
     box off;
     
     xlim([0 expt.ntrials]); 

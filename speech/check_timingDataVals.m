@@ -534,20 +534,20 @@ function errors = get_dataVals_errors(UserData,dataVals, segFields)
     %% put trials into error categories
     for i = 1:length(dataVals)
         if dataVals(i).bExcl
-            badTrials = [badTrials dataVals(i).token]; %#ok<*AGROW>
+            badTrials = [badTrials dataVals(i).trial]; %#ok<*AGROW>
         elseif dataVals(i).(segFields.dur) < UserData.errorParams.shortThresh && dataVals(i).(segFields.dur) > UserData.errorParams.flipThresh %check for too short trials
-            shortTrials = [shortTrials dataVals(i).token];
+            shortTrials = [shortTrials dataVals(i).trial];
         elseif dataVals(i).(segFields.dur) < UserData.errorParams.flipThresh % check for segmentation that is backwards
-            flipTrials = [flipTrials dataVals(i).token];
+            flipTrials = [flipTrials dataVals(i).trial];
         elseif dataVals(i).dur > UserData.errorParams.longThresh %check for too long trials
-            longTrials = [longTrials dataVals(i).token];
+            longTrials = [longTrials dataVals(i).trial];
 %         elseif (isfield(UserData.expt, 'timing') && isfield(UserData.expt.timing, 'stimdur') && dataVals(i).ampl_taxis(end) > UserData.errorParams.lateThresh_ratio*UserData.expt.timing.stimdur) || ...
 %                 ~(isfield(UserData.expt, 'timing') && isfield(UserData.expt.timing, 'stimdur')) && dataVals(i).ampl_taxis(end) > UserData.errorParams.lateThresh_absolute
 %             % check vowel endpoint relative to stimdur if possible.
 %             % Otherwise, use arbitrary duration, to wit UserData.errorParams.lateThresh
 %             lateTrials = [lateTrials dataVals(i).token];
         else
-            goodTrials = [goodTrials dataVals(i).token];
+            goodTrials = [goodTrials dataVals(i).trial];
         end
     end
 
@@ -587,12 +587,13 @@ function update_plots(src,evt)
         set(UserData.warnPanel,'HighlightColor','yellow')
         set(UserData.warnText,'String',outstring)
         pause(0.0001)
-        [UserData.htracks,UserData.hsub] = plot_rawDurs(UserData.dataValsIn,UserData.segFields.dur,grouping,UserData.trialset,UserData.plotPanel,UserData.expt);
+        [UserData.htracks,UserData.hsub] = plot_rawDurs(UserData.dataValsIn,UserData.dataValsOut,UserData.segFields.dur,grouping,UserData.trialset,UserData.plotPanel,UserData.expt);
         set(UserData.warnText,'String',[])
         set(UserData.warnPanel,'HighlightColor',[1 1 1])
         for iPlot = 1:length(UserData.htracks)
             for iLine = 1:length(UserData.htracks(iPlot).dur)
                 set(UserData.htracks(iPlot).dur(iLine),'ButtonDownFcn',{@pick_line,iLine,iPlot})
+                set(UserData.htracks(iPlot).pert(iLine),'ButtonDownFcn',{@pick_line,iLine,iPlot})
             end
         end
     end
@@ -604,22 +605,51 @@ end
 function pick_line(src,evt,iLine,iPlot)
     UserData = guidata(src);
     unselectedColor = [0.7 0.7 0.7];
-    f1color = [0 0 1]; % blue
-    f2color = [1 0 0]; % red
+    durColor = [25 180 85]./255; 
+    pertColor = [0.5 0.2 0.6]; 
     UserData.TB_select_trial.Value = 1;
     
     outstring = textwrap(UserData.warnText,{'Selected trial: ', src.Tag});
     set(UserData.warnText,'String',outstring)
     UserData.trialset = str2double(src.Tag);
     
-    selF = UserData.htracks(iPlot).dur;
-    set(UserData.htracks(iPlot).dur(selF==src),'Color',f1color,'LineWidth',3)
-    uistack(UserData.htracks(iPlot).dur(selF==src),'top');
+    selF = UserData.htracks(iPlot).dur(iLine);
+    selP = UserData.htracks(iPlot).pert(iLine); 
+    set(UserData.htracks(iPlot).dur(iLine),'MarkerFaceColor',durColor,'MarkerSize',8)
+    set(UserData.htracks(iPlot).pert(iLine),'MarkerFaceColor',pertColor,'MarkerSize',8);
+%     uistack(UserData.htracks(iPlot).dur(iLine),'top'); % RK note: this doesn't work with yyaxis, and plotyy is going to
+%     deprecate so I don't feel like changing this. 
     
-    set(UserData.htracks(iPlot).dur(selF~=src),'Color',unselectedColor,'LineWidth',1)
+    notSel = 1:length(UserData.htracks(iPlot).dur); 
+    notSel(iLine) = []; 
+    
+%     for i = 1:length(UserData.htracks(iPlot).dur)
+%         if i~=iLine
+%             set(UserData.htracks(i).dur(iLine),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
+%             set(UserData.htracks(i).pert(:),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
+%         end
+%             
+%         
+%     set(UserData.htracks(iPlot).dur(selF~=src),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
+%     set(UserData.htracks(iPlot).pert(selP~=src),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
+    
+    
+%     selF = UserData.htracks(iPlot).dur;
+%     selP = UserData.htracks(iPlot).pert; 
+%     set(UserData.htracks(iPlot).dur(selF==src),'MarkerFaceColor',durColor,'MarkerSize',8)
+%     set(UserData.htracks(iPlot).pert(selP==src),'MarkerFaceColor',pertColor,'MarkerSize',8);
+%     set(UserData.htracks(iPlot).dur(selF~=src),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
+%     set(UserData.htracks(iPlot).pert(selP~=src),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
+%     uistack(UserData.htracks(iPlot).dur(selF==src),'top');
+    
+    % Set all the other plots also to unselected
     for i = 1:length(UserData.htracks)
         if i ~= iPlot
-            set(UserData.htracks(i).dur(:),'Color',unselectedColor,'LineWidth',1)
+            set(UserData.htracks(i).dur(:),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
+            set(UserData.htracks(i).pert(:),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
+        else
+            set(UserData.htracks(i).dur(notSel),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
+            set(UserData.htracks(i).pert(notSel),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
         end
     end
     guidata(src,UserData);
@@ -627,5 +657,24 @@ end
 
 function launch_GUI(src,evt)
     UserData = guidata(src);
-    audioGUI(UserData.dataPath,UserData.trialset,UserData.buffertype,[],0, UserData.folderSuffix)
+    bIn = 0; 
+    bOut = 0; 
+    answer = questdlg('Would you like to check signalIn, signalOut, or both?', ...
+            'Which buffer', ... % question dialog title
+            'signalIn only','signalOut only','both',... % button names
+            'signalIn only'); % Default selection 
+        
+    if strcmp(answer, 'signalIn only') || strcmp(answer, 'both')
+        bIn = 1; 
+    end
+    if strcmp(answer, 'signalOut only') || strcmp(answer, 'both')
+        bOut = 1; 
+    end
+
+    if bIn
+        audioGUI(UserData.dataPath,UserData.trialset,'signalIn',[],0)
+    end
+    if bOut
+        audioGUI(UserData.dataPath,UserData.trialset,'signalOut',[],0)
+    end
 end
