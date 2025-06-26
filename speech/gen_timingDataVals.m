@@ -1,7 +1,44 @@
-function [errorTrials] = gen_timingDataVals(dataPath, buffertype, bSave)
+function [errorTrials] = gen_timingDataVals(dataPath,buffertype,bSave,textField,seg_list)
 %
 % Largely copied from gen_dataVals_tramTransfer. This is the generic function that will simply get the start times and
-% duration of every segment in STIMULUS TEXT. 
+% duration of segments labeled by user events. It assumes that all labeled user events are fair game. This works best with
+% MFA-aligned data. 
+% 
+% INPUTS
+% 
+%       dataPath                the folder where the trial and trials_signalOut folders are that have 1.mat, etc. Defaults to
+%                               pwd. Also needs an expt.mat
+% 
+%       buffertype              signalIn or signalOut. Defaults to signalIn
+% 
+%       bSave                   a check for whether or not you will save (overwrite!). If not specified, will perform a check
+%                               for the existence of a dataVals file; if one already exists then it will ask you want to
+%                               overwrite. 
+% 
+%       textField               the field in expt that has the text that was used for labeling. Defaults to simulusText. 
+% 
+%       seg_list                the list of segments that you actually want to get information for. Defaults to all. 
+% 
+% OUTPUTS
+% 
+%       dataVals                either dataVals_signalIn.mat or dataVals_signalOut.mat is saved. Fields: 
+%                                   - segDur: all segments from seg_list will have a field called segDur (e.g., eDur, cDur).
+%                                   This is the duration of the interval between the user event labeled as such and the next
+%                                   user event 
+%                                   - segStart_time: all segments from seg_list will have a field called segStart_time (e.g.,
+%                                   eStart_time, cStart_time). This is the time of the user event with that label 
+%                                   - trial: the trial number
+%                                   - token: the repetition for that specific word/phrase 
+%                                   - wordList: the text of what was said (from expt.listWords) 
+%                                   - condList: the condition for that trial (from expt.listConds)
+%                                   - word: the number of the word that was said (from expt.allWords)
+%                                   - cond: the number of the condition that was used for that trial (from expt.allConds)
+%                                   - bPerturb: whether or not there was a perturbation on that trial (taken from
+%                                   expt.pertMag)
+%                                   - bExcl: if the trial has been marked as bad
+%                                   - bFlip: if the order of the user events is off (according to arpabet string) 
+% 
+
 % 
 % All segment start times are stored as segmentStart_time, e.g. ehStart_time
 % 
@@ -14,6 +51,7 @@ dbstop if error
 %%
 if nargin < 1 || isempty(dataPath), dataPath = cd; end
 if nargin < 2 || isempty(buffertype), buffertype = 'signalIn'; end
+if nargin < 4 || isempty(textField), textField = 'stimulusText'; end
 
 % set output files
 if strcmp(buffertype, 'signalIn')
@@ -30,6 +68,9 @@ if ~bSave
     return; 
 end
 
+if nargin < 5 || isempty(seg_list), seg_list = 'all'; end
+
+%%
 % load expt files
 load(fullfile(dataPath,'expt.mat'), 'expt');
 if exist(fullfile(dataPath,'wave_viewer_params.mat'),'file')
@@ -41,21 +82,22 @@ trialPath = fullfile(dataPath,trialDir); % e.g. trials; trials_default
 [sortedTrialnums,sortedFilenames] = get_sortedTrials(trialPath); % these should be the same for both in/out so only need to define once
 dataVals = struct([]);
 
+%% This is for finding the correct tokens if there is more than one stimulus in a study 
 for i = 1:length(expt.words)
     word = expt.words{i}; 
     ix.(word) = find(expt.allWords == i); 
 end
 
-%% Get all unique arpabet strings 
-
-for s = 1:length(expt.stimulusText)
-    stimulusText = expt.stimulusText{s}; 
+%% Get all unique arpabet strings for the stimuli in the study 
+exptPhrases = []; 
+for s = 1:length(expt.(textField))
+    singlePhrase = []; 
+    stimulusText = expt.(textField){s}; 
     splitStim = split(stimulusText, ' '); % Split by spaces into cells so you can string together the whole tihng
-    trialPhrase = []; 
     
     % go through each word and get the arpabet for it 
-    for s = 1:length(splitStim)
-        stimPart = splitStim{s}; 
+    for p = 1:length(splitStim)
+        stimPart = splitStim{p}; 
         arpaStimPart = word2arpabet(stimPart); 
         if length(arpaStimPart) > 1
             questionText = warning('There are multiple versions of this word ("%s"): ', stimPart); 
@@ -68,10 +110,22 @@ for s = 1:length(expt.stimulusText)
         end
         
         arpaStimPart = arpaStimPart{whichOne}; 
-        trialPhrase = [trialPhrase arpaStimPart]; 
+
+        % Strip out numbers that mark stress (this is what UEVs do from MFA) 
+        for q = 1:length(arpaStimPart)
+            arpa = arpaStimPart{q};
+            arpa(regexp(arpa,'[0,1,2]'))=[];
+            arpaStimPart{q} = char(arpa);
+        end
+
+        singlePhrase = [singlePhrase arpaStimPart]; 
     end
 
+    exptPhrases{s} = singlePhrase;
+end
 
+% exptPhrases has all of the unique arpabet sequences for the stimuli used in the experiment. They are in the order of the
+% stimuli, e.g. words or stimulusText. This will be used to index in 
 
 %% Extract data from each trial
 
@@ -83,10 +137,10 @@ for i = 1:length(sortedTrialnums)
     trialnum = sortedTrialnums(i);
     filename = sortedFilenames{i};
     print_locationInLoop(trialnum, 25, i); 
-    
-    
-        
 
+    trialStimulus = exptPhrases{expt.(['list' upper(textField(1)) textField(2:end)])(trialnum)}; 
+    
+    % Load in the trial.mat file 
     if exist(fullfile(trialPath, filename), 'file')
         load(fullfile(trialPath,filename)); 
     
@@ -108,11 +162,7 @@ for i = 1:length(sortedTrialnums)
     end
 
     if trialparams.event_params.is_good_trial && ~bSkip
-        if strcmp(expt.listWords{trialnum}, word1)
-            onset_time = user_event_times(strcmp(user_event_names,word1Upper(1)));
-        elseif strcmp(expt.listWords{trialnum}, word2)
-            onset_time = user_event_times(strcmp(user_event_names,word2Upper(1)));
-        end
+        
 
         % event times
         vStart_time = user_event_times(strcmp(user_event_names,'AH') | strcmp(user_event_names,'EH'));        
