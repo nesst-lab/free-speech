@@ -68,12 +68,13 @@ segFields.lag = [seg_list 'Start_time'];
 % config errorParams
 defaultParams.shortThresh = 0.05; % less than 50 ms 
 defaultParams.flipThresh = 0; % if you have a negative duration, you probably flipped around user events 
-defaultParams.longThresh = 1; %longer than 1 second
+defaultParams.longThresh = 0.5; %longer than 1 second
 defaultParams.jumpThresh = 200; %in Hz, upper limit for sample-to-sample change to detect jumpTrials in F1 trajectory
 defaultParams.fishyFThresh = [200 1100]; %acceptable range of possible F1 values
     % ratio used to determine "late" or not. Absolute duration only used 
 defaultParams.lateThresh_ratio = 0.96; % acceptable endpoint ratio for speech before trial ends "too late"
 defaultParams.lateThresh_absolute = 1.5; % acceptable endpoint in seconds for speech before trial ends "too late". Only used as fallback if trial duration not available.
+defaultParams.earlyThresh_absolute = 0.05; 
 errorParams = set_missingFields(errorParams, defaultParams, 0);
 
 %% Set up GUI 
@@ -90,6 +91,7 @@ UserData.expt = expt;
 UserData.dataValsIn = dataValsIn; 
 UserData.dataValsOut = dataValsOut; 
 UserData.segFields = segFields; 
+UserData.dataValsFunction = dataValsFunction; 
 
 colors.pert = [0.5 0.2 0.6]; 
 colors.dur = [25 180 85]./255; 
@@ -161,256 +163,11 @@ UserData = generate_menus(UserData);
 
 guidata(h_tdv,UserData);
 
+end % End of main GUI
 
-%%
-
-
-        
-
-        
-        
-      
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-%%
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-end
-
+%% Start internal functions
 function save_exit(hObject,eventdata)
     delete(h_tdv); 
-%         answer = questdlg('Save current OST parameters and exit?', ...
-%             'Exit GUI', ... % question dialog title
-%             'Cancel (do not exit)','Save and exit','Exit without saving',... % button names
-%             'Cancel (do not exit)'); % Default selection 
-%         switch answer
-%             case 'Save and exit'
-%                 expt = x; 
-%                 
-%                 % Check if you did any recalculation, if you did but not for all trials, ask if you want to do them all
-%                 bNeedToSaveData = 0; 
-%                 if ~bAllOstRecalculated
-%                     recalculateAnswer = questdlg('You have recalculated a subset of the trials in this data structure. Would you like to apply the current parameters to all trials?', ...
-%                         'Recalculate all OSTs', ... % question dialog title
-%                         'Yes, recalculate all', 'No, keep this subset', 'Cancel (do not exit)', ... % button names
-%                         'Yes, recalculate all'); % Default selection 
-% 
-%                     
-%                     switch recalculateAnswer
-%                         case 'Yes, recalculate all'
-%                             fWaiting = waitbar(0,'Setting OST parameters...');
-%                             waitbar(0.33,fWaiting,'Calculating new OST vectors...')
-%                             ost_calc = calc_newAudapterData({y.signalIn},p.audapter_params,trackingFileDir,trackingFileName,'ost_stat');
-%                             
-%                             % Also put in new OST values for all the trials 
-%                             waitbar(0.66,fWaiting,'Writing trial OST information to data...')
-%                             set_ost(trackingFileDir,trackingFileName,ostStatus,hdropdown.heuristicChoice.String{hdropdown.heuristicChoice.Value},...
-%                                 str2double(hedit.statusParam1.String),str2double(hedit.statusParam2.String),str2double(hedit.statusParam3.String)); 
-% %                             for o = 1:length(ostList)
-% %                                 ostNumber = str2double(ostList{o});
-% %                                 [heur,param1,param2] = get_ost(trackingFileDir,trackingFileName,ostNumber,'working'); 
-% %                                 calcSubjOstParams{o} = {ostNumber heur param1 param2}; 
-% %                             end
-%                             calcSubjOstParams = get_ost(trackingFileDir, trackingFileName, 'full', 'working'); 
-%                             for i = 1:length(y)
-%                                 y(i).calcSubjOstParams = calcSubjOstParams; 
-%                             end
-%                             
-%                             waitbar(1,fWaiting,'Done')
-%                             pause(0.5)
-%                             close(fWaiting)
-%                             bNeedToSaveData = 1; 
-%                         case 'No, keep this subset'
-%                             fprintf('Some trials may be calculated with different OST parameters than others.\n')                            
-%                     end                        
-%                     
-%                 end
-%                 
-% 
-%                 startWaitBar = 0; 
-%                 fWaiting = waitbar(0,'Saving...'); 
-%                 if any(~cellfun(@isempty,ost_calc)) % if you did any calculation of new OSTs at all. if not it will not be saved (to save time)
-%                     startWaitBar = startWaitBar + 0.25; 
-%                     waitbar(startWaitBar,fWaiting,'Adding new OSTs to data structure...'); 
-%                     for i = 1:length(y)
-%                         y(i).ost_calc = ost_calc{i}; 
-%                     end
-%                     bNeedToSaveData = 1;                     
-%                 end
-%                 
-%                 if any(~cellfun(@isempty,signalOut_calc)) % if you did any calculation of new signal outs at all. if not it will not be saved (to save time)
-%                     startWaitBar = startWaitBar + 0.25; 
-%                     waitbar(startWaitBar,fWaiting,'Adding new signalOuts to data structure...'); 
-%                     for i = 1:length(y)
-%                         y(i).signalOut_calc = signalOut_calc{i}; 
-%                     end
-%                     bNeedToSaveData = 1;                     
-%                 end
-%                 
-%                 if any(~cellfun(@isempty,calcPcfLine)) % if you did any calculation of new signal outs at all. if not it will not be saved (to save time)
-%                     startWaitBar = startWaitBar + 0.25; 
-%                     waitbar(startWaitBar,fWaiting,'Adding new pcfLines to data structure...'); 
-%                     for i = 1:length(y)
-%                         y(i).calcPcfLine = calcPcfLine{i}; 
-%                     end
-%                     bNeedToSaveData = 1;                     
-%                 end
-%                 
-%                 if bNeedToSaveData
-%                     data = y; 
-%                     switch x.name
-%                         case 'dipSwitch' % dipswitch has exceptional behavior because it can be run on a mac
-%                             isOnServer = exist(get_acoustLoadPath(x.name,x.snum,x.session,word),'dir');
-%                             if isOnServer
-%                                 savePath = get_acoustLoadPath(x.name,x.snum,sprintf('session%d', x.session),word);
-%                             else
-%                                 if ispc && strcmp(expt.dataPath(1), '/') % on pc, but dataPath is Mac formatted
-%                                     savePath = pwd;
-%                                     warning('OS mismatch -- couldn''t save to expt.dataPath. Saving instead to current directory: \n%s\n', pwd);
-%                                 else
-%                                     savePath = fullfile(x.dataPath,sprintf('session%d', x.session),word);
-%                                 end
-%                             end
-%                         case 'timeAdapt' % timeAdapt has exceptional behavior because the expt.dataPath was saved for whole experiment, not word-specific 
-%                             isOnServer = exist(get_acoustLoadPath(x.name,x.snum,word),'dir');
-%                             if isOnServer
-%                                 savePath = get_acoustLoadPath(x.name,x.snum,word);                                
-%                             else
-%                                 savePath = get_acoustSavePath(x.name,x.snum,word); 
-%                             end
-%                             
-%                             if strcmp(x.conds,'pre')
-%                                 savePath = fullfile(savePath,'pre'); 
-%                             end
-%                             
-%                         otherwise % Assume that you will simply save to dataPath, but check if it should go to server or not
-%                             % Translate between server path and expt path to get two options
-%                             dataPathParts = strsplit(x.dataPath, 'experiments'); 
-%                             if length(dataPathParts) > 1 % assumes you're using default SMNG filepath structures and might access SMNG server
-%                                 serverPrefix = '\\wcs-cifs.waisman.wisc.edu\wc\smng\'; 
-%                                 serverPath = fullfile(serverPrefix, 'experiments', dataPathParts{2}); 
-%                                 isOnServer = exist(serverPath,'dir'); 
-%                                 savePath = choosePathDialog({serverPath, x.dataPath, pwd}, isOnServer); 
-%                             else % not using default SMNG filepath structure; don't offer SMNG server
-%                                 savePath = choosePathDialog({x.dataPath, pwd}, 0);
-%                             end
-%                             
-%                             % If you've hit cancel when choosing, then take away dialogs and don't save or anything
-%                             if ~savePath
-%                                 waitbar(1,fWaiting,'Canceling save')
-%                                 pause(0.5)
-%                                 delete(fWaiting)
-%                                 return; 
-%                             end
-%                             
-%                             if ~exist(savePath, 'dir')
-%                                 shouldIMkDir = questdlg(sprintf('The path you chose does not currently exist. Would you like to create this directory and save?\n\n Chosen path: %s', savePath), ...
-%                                     'Verify creating directory', ... % question dialog title
-%                                     'Yes, create this directory', 'No, cancel save', ... % button names
-%                                     'No, cancel save'); % Default selection 
-%                                 
-%                                 if strcmp(shouldIMkDir, 'Yes, create this directory')
-%                                     mkdir(savePath); 
-%                                 else
-%                                     return; 
-%                                 end
-%                             end
-% 
-%                     end
-%                     waitbar(0.9,fWaiting,'Saving data...')
-%                     save(fullfile(savePath,'data.mat'),'data')
-%                     waitbar(0.95,fWaiting,'Saving expt...')
-%                     save(fullfile(savePath,'expt.mat'),'expt'); 
-%             
-%                 end    
-%                 waitbar(1,fWaiting,'Done')
-%                 pause(0.5)
-%                 delete(fWaiting)
-%                 try delete(alert2mismatchMex); catch; end
-%                 try delete(fWaiting); catch; end
-%                 delete(hf)
-%             case 'Exit without saving'
-%                 try delete(alert2mismatchMex); catch; end
-%                 try delete(fWaiting); catch; end
-%                 delete(hf)            
-%         end
 end
 
 
@@ -550,6 +307,8 @@ function UserData = generate_menus(UserData)
 end
 
 function errors = get_dataVals_errors(UserData,dataVals, segFields)
+% Function that calculates different possible errors. Note that there are fewer than in formants---basically looking for
+% things that are suspiciously long or short. Early/late still needs to be fixed
     outstring = textwrap(UserData.warnText,{'Checking for errors'});
     set(UserData.warnPanel,'HighlightColor','yellow')
     set(UserData.warnText,'String',outstring)
@@ -570,13 +329,18 @@ function errors = get_dataVals_errors(UserData,dataVals, segFields)
             shortTrials = [shortTrials dataVals(i).trial];
         elseif dataVals(i).(segFields.dur) < UserData.errorParams.flipThresh % check for segmentation that is backwards
             flipTrials = [flipTrials dataVals(i).trial];
-        elseif dataVals(i).dur > UserData.errorParams.longThresh %check for too long trials
+        elseif dataVals(i).(segFields.dur) > UserData.errorParams.longThresh %check for too long trials
             longTrials = [longTrials dataVals(i).trial];
-%         elseif (isfield(UserData.expt, 'timing') && isfield(UserData.expt.timing, 'stimdur') && dataVals(i).ampl_taxis(end) > UserData.errorParams.lateThresh_ratio*UserData.expt.timing.stimdur) || ...
-%                 ~(isfield(UserData.expt, 'timing') && isfield(UserData.expt.timing, 'stimdur')) && dataVals(i).ampl_taxis(end) > UserData.errorParams.lateThresh_absolute
-%             % check vowel endpoint relative to stimdur if possible.
-%             % Otherwise, use arbitrary duration, to wit UserData.errorParams.lateThresh
-%             lateTrials = [lateTrials dataVals(i).token];
+            % RK to do 
+        elseif (isfield(UserData.expt, 'timing') && isfield(UserData.expt.timing, 'stimdur') && (dataVals(i).(segFields.lag) + dataVals(i).(segFields.dur)) > UserData.errorParams.lateThresh_ratio*UserData.expt.timing.stimdur) || ...
+                ~(isfield(UserData.expt, 'timing') && isfield(UserData.expt.timing, 'stimdur')) && (dataVals(i).(segFields.lag) + dataVals(i).(segFields.dur)) > UserData.errorParams.lateThresh_absolute
+            % check segment endpoint relative to stimdur if possible.
+            % Otherwise, use arbitrary duration, to wit UserData.errorParams.lateThresh
+            lateTrials = [lateTrials dataVals(i).trial];
+        elseif dataVals(i).(segFields.lag) < UserData.errorParams.earlyThresh_absolute 
+            % check segment endpoint relative to stimdur if possible.
+            % Otherwise, use arbitrary duration, to wit UserData.errorParams.lateThresh
+            earlyTrials = [earlyTrials dataVals(i).trial];
         else
             goodTrials = [goodTrials dataVals(i).trial];
         end
@@ -595,6 +359,7 @@ function errors = get_dataVals_errors(UserData,dataVals, segFields)
 end
 
 function update_plots(src,evt)
+% this is the function that replots everything if you switch error type or regenerate datavals, etc. 
     UserData = guidata(src);
     errorField = UserData.errorPanel.SelectedObject.String{1};
     UserData.trialset = UserData.errors.(errorField);
@@ -639,6 +404,7 @@ function update_plots(src,evt)
 end
 
 function pick_line(src,evt,iLine,iPlot)
+% This is a function that highlights a trial that you want to look at more carefully 
     UserData = guidata(src);
     if UserData.pertToggle.Value 
         pertColor = UserData.colors.pert;
@@ -661,25 +427,6 @@ function pick_line(src,evt,iLine,iPlot)
     notSel = 1:length(UserData.htracks(iPlot).dur); 
     notSel(iLine) = []; 
     
-%     for i = 1:length(UserData.htracks(iPlot).dur)
-%         if i~=iLine
-%             set(UserData.htracks(i).dur(iLine),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
-%             set(UserData.htracks(i).pert(:),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
-%         end
-%             
-%         
-%     set(UserData.htracks(iPlot).dur(selF~=src),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
-%     set(UserData.htracks(iPlot).pert(selP~=src),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
-    
-    
-%     selF = UserData.htracks(iPlot).dur;
-%     selP = UserData.htracks(iPlot).pert; 
-%     set(UserData.htracks(iPlot).dur(selF==src),'MarkerFaceColor',durColor,'MarkerSize',8)
-%     set(UserData.htracks(iPlot).pert(selP==src),'MarkerFaceColor',pertColor,'MarkerSize',8);
-%     set(UserData.htracks(iPlot).dur(selF~=src),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
-%     set(UserData.htracks(iPlot).pert(selP~=src),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
-%     uistack(UserData.htracks(iPlot).dur(selF==src),'top');
-    
     % Set all the other plots also to unselected
     for i = 1:length(UserData.htracks)
         if i ~= iPlot
@@ -694,6 +441,7 @@ function pick_line(src,evt,iLine,iPlot)
 end
 
 function launch_GUI(src,evt)
+% To launch audioGUI. Gives you the option to do signalIn only, out, or both sequentially 
     UserData = guidata(src);
     bIn = 0; 
     bOut = 0; 
@@ -715,6 +463,98 @@ function launch_GUI(src,evt)
     if bOut
         audioGUI(UserData.dataPath,UserData.trialset,'signalOut',[],0)
     end
+end
+
+function reload_dataVals(src,evt)
+% To trigger recalculating dataVals (after, say, correcting a trial) 
+    UserData = guidata(src);
+    delete(UserData.errorPanel)
+    delete(UserData.groupPanel)
+    delete(UserData.trialPanel)
+    if isfield(UserData,'htracks')
+        delete(UserData.hsub);
+        UserData = rmfield(UserData,'htracks');
+        UserData = rmfield(UserData,'hsub');
+    end
+    bIn = 0; 
+    bOut = 0; 
+    answer = questdlg('Would you like to regenerate signalIn, signalOut, or both?', ...
+            'Which buffer', ... % question dialog title
+            'signalIn only','signalOut only','both',... % button names
+            'signalIn only'); % Default selection 
+        
+    if strcmp(answer, 'signalIn only') || strcmp(answer, 'both')
+        bIn = 1; 
+    end
+    if strcmp(answer, 'signalOut only') || strcmp(answer, 'both')
+        bOut = 1; 
+    end
+    [UserData.dataValsIn,UserData.dataValsOut,UserData.expt] = load_dataVals(UserData,UserData.dataPath,1,bIn,bOut,UserData.dataValsFunction);
+    UserData.errors = get_dataVals_errors(UserData,UserData.dataValsIn,UserData.segFields);
+    UserData = generate_menus(UserData);
+    guidata(src,UserData);
+end
+
+function [dataValsIn, dataValsOut, expt] = load_dataVals(UserData,dataPath,bCalc,bIn,bOut,dataValsFunction)
+% Function that loads dataVals. 
+% if bCalc, you are regenerating 
+    if bCalc
+        msg = 'Regenerating and loading dataVals';
+    else
+        msg = 'Loading dataVals';
+    end
+    outstring = textwrap(UserData.warnText,{msg});
+    set(UserData.warnPanel,'HighlightColor','yellow')
+    set(UserData.warnText,'String',outstring)
+    
+    % Because dur uses both in and out, but sometimes you only needed to fix one or the other's segmentation 
+    if bIn 
+        dataValsFunction(dataPath, 'signalIn', 1); 
+        load(fullfile(dataPath,'dataVals_signalIn.mat'))
+        dataValsIn = dataVals; 
+        clear dataVals; 
+    else
+        dataValsIn = UserData.dataValsIn; 
+    end
+    if bOut
+        dataValsFunction(dataPath, 'signalOut', 1); 
+        load(fullfile(dataPath,'dataVals_signalOut.mat'))
+        dataValsOut = dataVals; 
+        clear dataVals; 
+    else
+        dataValsOut = UserData.dataValsOut; 
+    end
+    load(fullfile(dataPath,'expt.mat'), 'expt')
+    set(UserData.warnText,'String',[])
+    set(UserData.warnPanel,'HighlightColor',[1 1 1])
+end
+
+function TB_all(src,evt)
+% Function that selects all trials (changes color; launch_GUI will now do all in a section)
+    UserData = guidata(src);
+
+    if UserData.pertToggle.Value
+        pertColor = UserData.colors.pert;
+    else
+        pertColor = UserData.colors.lag;
+    end
+    for i = 1:length(UserData.htracks)
+        set(UserData.htracks(i).dur(:),'MarkerFaceColor',UserData.colors.dur,'MarkerSize',5)
+        set(UserData.htracks(i).pert(:),'MarkerFaceColor',pertColor,'MarkerSize',5)
+    end
+    errorField = UserData.errorPanel.SelectedObject.String{1};
+    UserData.trialset = UserData.errors.(errorField);
+    outstring = textwrap(UserData.warnText,{strcat(num2str(length(UserData.trialset)),' trials selected')});
+    set(UserData.warnText,'String',outstring)
+    guidata(src,UserData);
+end
+
+function TB_sel(src,evt)
+    UserData = guidata(src);
+    outstring = textwrap(UserData.warnText,{'Select a trial'});
+    set(UserData.warnText,'String',outstring)
+    
+    guidata(src,UserData);
 end
 
 function toggle_sigOut(src,evt)
