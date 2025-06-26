@@ -24,9 +24,15 @@ if nargin < 7 || isempty(expt)
 end
 
 %%
+plotcolors.dur = [25 180 85]./255; 
+if contains(segField, 'Dur')
+    plotcolors.pert = [0.5 0.2 0.6]; 
+else
+    plotcolors.pert = [30 170 200]./255; 
+end
 
-durColor = [25 180 85]./255; 
-pertColor = [0.5 0.2 0.6]; 
+
+
 %%
 
 groups = unique([dataValsIn.(grouping)]);
@@ -59,13 +65,13 @@ for g = 1:length(groups)
             % Plot that trials' duration 
             yyaxis left; 
             htracks(g).dur(ihandle) = plot(dataValsIn(i).trial, dataValsIn(i).(segField),'Marker', 'o', 'LineStyle', 'none', ...
-                'MarkerFaceColor', durColor, 'MarkerEdgeColor', durColor - 0.05,'MarkerSize',5); 
+                'MarkerFaceColor', plotcolors.dur, 'MarkerEdgeColor', plotcolors.dur - 0.05,'MarkerSize',5); 
             set(htracks(g).dur(ihandle),'Tag',num2str(dataValsIn(i).trial),'YdataSource',segField)
             hold on; 
             yyaxis right; 
             pert = dataValsOut(i).(segField) - dataValsIn(i).(segField); 
             htracks(g).pert(ihandle) = plot(dataValsIn(i).trial, pert, 'Marker', '^', 'LineStyle', 'none', ...
-                'MarkerFaceColor', pertColor, 'MarkerEdgeColor', pertColor - 0.05,'MarkerSize',5); 
+                'MarkerFaceColor', plotcolors.pert, 'MarkerEdgeColor', plotcolors.pert - 0.05,'MarkerSize',5); 
             set(htracks(g).pert(ihandle),'Tag',num2str(dataValsIn(i).trial),'YdataSource',segField)
             
             ihandle = ihandle+1;
@@ -85,14 +91,18 @@ for g = 1:length(groups)
     
     yyaxis left
     ax = gca; 
-    ylabel('duration (s)', 'Color', durColor); 
-    ax.YColor = durColor; 
+    ylabel('duration (s)', 'Color', plotcolors.dur); 
+    ax.YColor = plotcolors.dur; 
     ylim([min([dataValsIn(inds).(segField)]) - 0.03 max([dataValsIn(inds).(segField)]) + 0.03]); 
     
     yyaxis right
     ax = gca; 
-    ylabel('perturbation (s)', 'Color', pertColor); 
-    ax.YColor = pertColor; 
+    if contains(segField, 'Dur')
+        ylabel('perturbation (s)', 'Color', plotcolors.pert); 
+    else
+        ylabel('lag (s)', 'Color', plotcolors.pert);
+    end
+    ax.YColor = plotcolors.pert; 
     ylim([min(expt.pertMag) - 0.01 max(expt.pertMag) + 0.05]); 
     box off;
     

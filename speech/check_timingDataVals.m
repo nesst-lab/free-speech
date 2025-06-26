@@ -60,7 +60,7 @@ load(fullfile(dataPath, 'expt.mat'));
 %% Set up the fieldnames you'll be looking for in dataVals
 
 segFields.dur = [seg_list 'Dur']; 
-segFields.start = [seg_list 'Start_time']; 
+segFields.lag = [seg_list 'Start_time']; 
 
 
 %% Set up error parameters
@@ -90,6 +90,12 @@ UserData.expt = expt;
 UserData.dataValsIn = dataValsIn; 
 UserData.dataValsOut = dataValsOut; 
 UserData.segFields = segFields; 
+
+colors.pert = [0.5 0.2 0.6]; 
+colors.dur = [25 180 85]./255; 
+colors.lag = [30 170 200]./255; 
+colors.unselected = [0.9 0.9 0.9]; 
+UserData.colors = colors; 
 
 % create warning text area
 warnPanelXPos = 0.575;
@@ -154,8 +160,6 @@ set(UserData.AB_reload_dataVals,'CallBack',@reload_dataVals)
 UserData = generate_menus(UserData);
 
 guidata(h_tdv,UserData);
-
-pause; 
 
 
 %%
@@ -418,7 +422,7 @@ function UserData = generate_menus(UserData)
     % create error type buttons
     errorPanelXPos = 0.025;
     errorPanelXSpan = 0.125;
-    errorPanelYSpan = 0.95;
+    errorPanelYSpan = 0.775;
     errorPanelYPos = UserData.xPosMax - errorPanelYSpan;
     errorPanelPos = [errorPanelXPos errorPanelYPos errorPanelXSpan errorPanelYSpan]; 
     UserData.errorPanel = uibuttongroup(UserData.f,'Units','Normalized','Position',...
@@ -451,6 +455,33 @@ function UserData = generate_menus(UserData)
             end
         end
     end
+    
+    % Toggle switch for duration perturbation vs. delay 
+    togglePanelXPos = 0.025;
+    togglePanelXSpan = 0.125;
+    togglePanelYSpan = 0.15;
+    togglePanelYPos = 0.025;
+    togglePanelPos = [togglePanelXPos togglePanelYPos togglePanelXSpan togglePanelYSpan]; 
+    UserData.togglePanel = uipanel(UserData.f,'Units','Normalized','Position',...
+                togglePanelPos,'Title',' signalOut info ',...
+                'Tag','signalOut_info','TitlePosition','CenterTop',...
+                'FontSize',0.02,'FontUnits','Normalized','Visible','on');
+            
+    UserData.pertToggle = uicontrol(UserData.togglePanel,'Style','togglebutton',...
+        'String','Duration pert.',...
+        'Value',1,...
+        'BackgroundColor',UserData.colors.pert/0.9,...
+        'Units','Normalized','Position',[0.1 0.6 0.8 0.3],...
+        'FontUnits','Normalized','FontSize',0.6,...
+        'Callback',@toggle_sigOut);
+    UserData.lagToggle = uicontrol(UserData.togglePanel,'Style','togglebutton',...
+        'String','Delay magnitude',...
+        'Value',0,...
+        'BackgroundColor',UserData.colors.unselected,...
+        'Units','Normalized','Position',[0.1 0.2 0.8 0.3],...
+        'FontUnits','Normalized','FontSize',0.6,...
+        'Callback',@toggle_sigOut);
+            
 
     % create sort selection buttons
     groupPanelXPos = 0.175;
@@ -587,7 +618,12 @@ function update_plots(src,evt)
         set(UserData.warnPanel,'HighlightColor','yellow')
         set(UserData.warnText,'String',outstring)
         pause(0.0001)
-        [UserData.htracks,UserData.hsub] = plot_rawDurs(UserData.dataValsIn,UserData.dataValsOut,UserData.segFields.dur,grouping,UserData.trialset,UserData.plotPanel,UserData.expt);
+        if UserData.pertToggle.Value
+            sigOut_segField = 'dur'; 
+        else
+            sigOut_segField = 'lag'; 
+        end
+        [UserData.htracks,UserData.hsub] = plot_rawDurs(UserData.dataValsIn,UserData.dataValsOut,UserData.segFields.(sigOut_segField),grouping,UserData.trialset,UserData.plotPanel,UserData.expt);
         set(UserData.warnText,'String',[])
         set(UserData.warnPanel,'HighlightColor',[1 1 1])
         for iPlot = 1:length(UserData.htracks)
@@ -604,9 +640,11 @@ end
 
 function pick_line(src,evt,iLine,iPlot)
     UserData = guidata(src);
-    unselectedColor = [0.7 0.7 0.7];
-    durColor = [25 180 85]./255; 
-    pertColor = [0.5 0.2 0.6]; 
+    if UserData.pertToggle.Value 
+        pertColor = UserData.colors.pert;
+    else
+        pertColor = UserData.colors.lag;
+    end
     UserData.TB_select_trial.Value = 1;
     
     outstring = textwrap(UserData.warnText,{'Selected trial: ', src.Tag});
@@ -615,7 +653,7 @@ function pick_line(src,evt,iLine,iPlot)
     
     selF = UserData.htracks(iPlot).dur(iLine);
     selP = UserData.htracks(iPlot).pert(iLine); 
-    set(UserData.htracks(iPlot).dur(iLine),'MarkerFaceColor',durColor,'MarkerSize',8)
+    set(UserData.htracks(iPlot).dur(iLine),'MarkerFaceColor',UserData.colors.dur,'MarkerSize',8)
     set(UserData.htracks(iPlot).pert(iLine),'MarkerFaceColor',pertColor,'MarkerSize',8);
 %     uistack(UserData.htracks(iPlot).dur(iLine),'top'); % RK note: this doesn't work with yyaxis, and plotyy is going to
 %     deprecate so I don't feel like changing this. 
@@ -645,11 +683,11 @@ function pick_line(src,evt,iLine,iPlot)
     % Set all the other plots also to unselected
     for i = 1:length(UserData.htracks)
         if i ~= iPlot
-            set(UserData.htracks(i).dur(:),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
-            set(UserData.htracks(i).pert(:),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
+            set(UserData.htracks(i).dur(:),'MarkerFaceColor',UserData.colors.unselected,'MarkerSize',5)
+            set(UserData.htracks(i).pert(:),'MarkerFaceColor',UserData.colors.unselected,'MarkerSize',5)
         else
-            set(UserData.htracks(i).dur(notSel),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
-            set(UserData.htracks(i).pert(notSel),'MarkerFaceColor',unselectedColor,'MarkerSize',5)
+            set(UserData.htracks(i).dur(notSel),'MarkerFaceColor',UserData.colors.unselected,'MarkerSize',5)
+            set(UserData.htracks(i).pert(notSel),'MarkerFaceColor',UserData.colors.unselected,'MarkerSize',5)
         end
     end
     guidata(src,UserData);
@@ -677,4 +715,40 @@ function launch_GUI(src,evt)
     if bOut
         audioGUI(UserData.dataPath,UserData.trialset,'signalOut',[],0)
     end
+end
+
+function toggle_sigOut(src,evt)
+    UserData = guidata(src); 
+    pause(0.05); 
+    % Check if you just clicked on "Duration perturbation" 
+    bDur = strcmp(evt.Source.String, 'Duration pert.'); 
+    
+    % Change the other button too 
+    if bDur
+        % If the action was to untoggle  pert, 
+        if UserData.pertToggle.Value == 0
+            UserData.pertToggle.BackgroundColor = UserData.colors.unselected; 
+            UserData.lagToggle.Value = 1; 
+            UserData.lagToggle.BackgroundColor = UserData.colors.lag/0.9; 
+        else            
+            UserData.pertToggle.BackgroundColor = UserData.colors.pert/0.9; 
+            UserData.lagToggle.Value = 0; 
+            UserData.lagToggle.BackgroundColor = UserData.colors.unselected; 
+        end
+    else
+        % If the action was to untoggle lag, 
+        if UserData.lagToggle.Value == 0
+            UserData.pertToggle.Value = 1; 
+            UserData.pertToggle.BackgroundColor = UserData.colors.pert/0.9; 
+            UserData.lagToggle.BackgroundColor = UserData.colors.unselected; 
+        else
+            UserData.pertToggle.Value = 0; 
+            UserData.pertToggle.BackgroundColor = UserData.colors.unselected; 
+            UserData.lagToggle.BackgroundColor = UserData.colors.lag/0.9; 
+        end
+    end
+    
+    % Then replot 
+    update_plots(src, evt); 
+
 end
