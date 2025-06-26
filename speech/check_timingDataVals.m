@@ -38,21 +38,19 @@ if nargin < 4 || isempty(dataValsFunction), dataValsFunction = @gen_timingDataVa
 
 %% Load in various data structures
 
-if exist(fullfile(dataPath, 'dataVals_signalIn.mat'), 'file')
-    load(fullfile(dataPath, 'dataVals_signalIn.mat')); 
-    dataValsIn = dataVals; 
-    clear dataVals; 
-else
-    dataValsIn = dataValsFunction([], [], 'signalIn'); 
+if ~exist(fullfile(dataPath, 'dataVals_signalIn.mat'), 'file')
+    dataValsFunction([], 'signalIn');     
 end
+load(fullfile(dataPath, 'dataVals_signalIn.mat')); 
+dataValsIn = dataVals; 
+clear dataVals; 
 
-if exist(fullfile(dataPath, 'dataVals_signalOut.mat'), 'file')
-    load(fullfile(dataPath, 'dataVals_signalOut.mat')); 
-    dataValsOut = dataVals; 
-    clear dataVals; 
-else
-    dataValsOut = dataValsFunction([], [], 'signalOut'); 
+if ~exist(fullfile(dataPath, 'dataVals_signalOut.mat'), 'file')
+    dataValsFunction([], 'signalOut'); 
 end
+load(fullfile(dataPath, 'dataVals_signalOut.mat')); 
+dataValsOut = dataVals; 
+clear dataVals; 
 
 load(fullfile(dataPath, 'expt.mat')); 
 
