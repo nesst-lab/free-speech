@@ -15,3 +15,18 @@ install.packages("glue")
 install.packages("dplyr")
 install.packages("Rmisc")
 install.packages("cowplot")
+
+
+install.packages("ggpmisc")
+
+install.packages("effsize")
+install.packages("ggpmisc")
+install.packages("ggnewscale")
+
+install.packages("ggpubr")
+
+install.packages("ggforce")
+install.packages("ggdist")
+install.packages("gghalves")
+install.packages("see") # half violin
+install.packages("ggh4x") # panel size forcing for wrapping controls to ataxia
