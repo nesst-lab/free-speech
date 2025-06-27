@@ -1,4 +1,4 @@
-function [dataVals] = gen_timingDataVals(dataPath,buffertype,bSave,textField,seg_list)
+function [dataVals] = gen_timingDataVals(dataPath,buffertype,bSave,varargin) %textField,seg_list)
 %
 % Largely copied from gen_dataVals_tramTransfer. This is the generic function that will simply get the start times and
 % duration of segments labeled by user events. It assumes that all labeled user events are fair game. This works best with
@@ -15,9 +15,12 @@ function [dataVals] = gen_timingDataVals(dataPath,buffertype,bSave,textField,seg
 %                               for the existence of a dataVals file; if one already exists then it will ask you want to
 %                               overwrite. 
 % 
-%       textField               the field in expt that has the text that was used for labeling. Defaults to simulusText. 
+%   varargin: (must be in this order!!) 
 % 
-%       seg_list                the list of segments that you actually want to get information for. Defaults to all. 
+%       textField               the field in expt that has the text that was used for labeling. Defaults to stimulusText. 
+% 
+%       seg_list                the list of segments that you actually want to get information for. Defaults to all. Specify
+%                               as a cell array. (Argument handling will also take a single segment as a string) 
 % 
 % OUTPUTS
 % 
@@ -39,11 +42,7 @@ function [dataVals] = gen_timingDataVals(dataPath,buffertype,bSave,textField,seg
 %                                   - bFishy: if the trial has the wrong number of (nonempty) events
 %                                   - bFlip: if the order of the user events is off (according to arpabet string) 
 % 
-
 % 
-% All segment start times are stored as segmentStart_time, e.g. ehStart_time
-% 
-% All segment durations are stored as segmentDur, e.g., ehDur
 %  
 % Initiated RK 2025/06/26 
 
@@ -52,8 +51,6 @@ dbstop if error
 %%
 if nargin < 1 || isempty(dataPath), dataPath = cd; end
 if nargin < 2 || isempty(buffertype), buffertype = 'signalIn'; end
-if nargin < 4 || isempty(textField), textField = 'stimulusText'; end
-
 % set output files
 if strcmp(buffertype, 'signalIn')
     trialDir = 'trials';
@@ -69,8 +66,26 @@ if ~bSave
     return; 
 end
 
-if nargin < 5 || isempty(seg_list), seg_list = {'all'}; end
+% Set up varargin for textField (fourth input) 
+if nargin >= 4
+    textField = varargin{1}; 
+else
+    textField = []; 
+end
+if isempty(textField), textField = 'stimulusText'; end
+if iscell(textField)
+    textField = textField{1}; % if it comes in as part of varargin, then it'll come in as a cell 
+end
+
+% Set up varargin for seg_list (fifth input)
+if nargin >= 5
+    seg_list = varargin{2}; 
+else
+    seg_list = []; 
+end
+if isempty(seg_list), seg_list = {'all'}; end
 if ischar(seg_list), seg_list = {seg_list}; end % convert to cell if necessary 
+if iscell(seg_list{1}), seg_list = seg_list{1}; end % if it comes in as part of varargin i think it'll be a cell within a cell 
 
 %%
 % load expt files
@@ -161,7 +176,7 @@ for i = 1:length(sortedTrialnums)
             user_event_names = trialparams.event_params.user_event_names;
 
             % Sort user events chronologically for accurate comparison
-            [~, timesortix] = sort(user_event_times); 
+            [chron_user_event_times, timesortix] = sort(user_event_times); 
             chron_user_event_names = user_event_names(timesortix); 
             
             % Check to make sure that the very last event is empty---otherwise you're gonna error out when getting a duration (and
@@ -223,9 +238,9 @@ for i = 1:length(sortedTrialnums)
         % Get the durations and start times of each segment 
         for s = 1:length(segs2evaluate)
             seg = lower(segs2evaluate{s}); 
-            uevix = find(strcmpi(user_event_names, seg)); % not case sensitive---can specify in lowercase though MFA gives in upper
-            dataVals(i).([seg 'Dur']) = user_event_times(uevix + 1) - user_event_times(uevix); 
-            dataVals(i).([seg 'Start_time']) = user_event_times(uevix); 
+            uevix = find(strcmpi(chron_user_event_names, seg)); % not case sensitive---can specify in lowercase though MFA gives in upper
+            dataVals(i).([seg 'Dur']) = chron_user_event_times(uevix + 1) - user_event_times(uevix); 
+            dataVals(i).([seg 'Start_time']) = chron_user_event_times(uevix); 
         end
             
 %         

@@ -1,4 +1,4 @@
-function [] = check_timingDataVals(dataPath, show_seg, errorParams, dataValsFunction, textField, gen_segs)
+function [] = check_timingDataVals(dataPath, show_seg, errorParams, dataValsFunction, varargin)
 % Function to generally check that: 
 %   1. Hand correction is in the realm of correct
 %   2. Duration perturbations are what you were expecting
@@ -18,9 +18,34 @@ function [] = check_timingDataVals(dataPath, show_seg, errorParams, dataValsFunc
 %       dataPath                the data path where there is a data.mat, expt.mat, dataVals.mat, and dataVals_signalOut.mat. 
 %                               Defaults to pwd
 % 
-%       seg_list                the NAME of the segment that you are checking. This is whatever the fieldname "prefix" is in
-%                               dataVals. e.g. if you have 'e_dur' 'e_startTime' then you should put in 'e'. This is not
+%       show_seg                the NAME of the segment that you are checking. This is whatever the fieldname "prefix" is in
+%                               dataVals. e.g. if you have 'eDur' 'eStart_time' then you should put in 'e'. This is not
 %                               necessarily the same as what it is called in MFA/user events! 
+% 
+%       errorParams             a structure array with possible fields: shortThresh, longThresh, jumpThresh, lateThresh_ratio,
+%                               lateThresh_absolute, earlyThresh_absolute. These will let you override the defaults. 
+% 
+%       dataValsFunction        the function that YOUR experiment uses to generate timing dataVals. Provide this as a
+%                               function call: @gen_dataVals_tramTransfer, for example. If there is not a specific
+%                               gen_dataVals for your experiment, this will default to gen_timingDataVals, which works fine
+%                               for all basic temporal adaptation studies. 
+% 
+%       varargin                varargin is specifically arguments that you might feed into the dataValsFunction. Even more
+%                               specifically, it is input arguments 4+; the first three arguments are known by
+%                               check_timingDataVals and will be automatically fed in. For example, if you are using the
+%                               generic gen_timingDataVals, you might include: 
+%                               - 'words' as the first varargin, to denote that you want to use expt.words instead of
+%                               expt.stimulusText (to acquire the arpabet version of each trial). This is argument 4 in
+%                               gen_timingDataVals. 
+%                               - {'eh' 's' 't'} as the second varargin, to denote that you only want to get timing
+%                               information about eh, s, and t, and NOT the rest of the segments in the trial. This is
+%                               argument 5 in gen_timningDataVals. 
+%                               - note that you MUST PUT ARGUMENTS IN THE CORRECT ORDER FOR THE FUNCTION. So, if you wanted
+%                               to call gen_timingDataVals with stimulusText but change the segments, your call to
+%                               check_timingDataVals would be check_timingDataVals(dataPath, 'eh', [3], [4], [5], {'eh' 's'
+%                               't'}). 3 is errorParams, which you could leave empty; 4 is the dataVals function which you
+%                               can also leave empty, and 5 is the textField argument for gen_timingDataVals, which you can
+%                               leave empty as well. 
 %       
 % Outputs: 
 % 
@@ -35,20 +60,20 @@ dbstop if error
 if nargin < 1 || isempty(dataPath), dataPath = cd; end
 if nargin < 3 || isempty(errorParams), errorParams = struct; end
 if nargin < 4 || isempty(dataValsFunction), dataValsFunction = @gen_timingDataVals; end
-if nargin < 5 || isempty(textField), textField = 'stimulusText'; end
-if nargin < 6 || isempty(gen_segs), gen_segs = {'all'}; end
+% if nargin < 5 || isempty(textField), textField = 'stimulusText'; end
+% if nargin < 6 || isempty(gen_segs), gen_segs = {'all'}; end
 
 %% Load in various data structures
 
 if ~exist(fullfile(dataPath, 'dataVals_signalIn.mat'), 'file')
-    dataValsFunction([], 'signalIn', [], textField, gen_segs);     
+    dataValsFunction([], 'signalIn', [], varargin{1:end});     
 end
 load(fullfile(dataPath, 'dataVals_signalIn.mat')); 
 dataValsIn = dataVals; 
 clear dataVals; 
 
 if ~exist(fullfile(dataPath, 'dataVals_signalOut.mat'), 'file')
-    dataValsFunction([], 'signalOut', [], textField, gen_segs); 
+    dataValsFunction([], 'signalOut', [], varargin{1:end}); 
 end
 load(fullfile(dataPath, 'dataVals_signalOut.mat')); 
 dataValsOut = dataVals; 
@@ -67,11 +92,8 @@ segFields.lag = [show_seg 'Start_time'];
 
 % config errorParams
 defaultParams.shortThresh = 0.05; % less than 50 ms 
-defaultParams.flipThresh = 0; % if you have a negative duration, you probably flipped around user events 
 defaultParams.longThresh = 0.5; %longer than 1 second
 defaultParams.jumpThresh = 200; %in Hz, upper limit for sample-to-sample change to detect jumpTrials in F1 trajectory
-defaultParams.fishyFThresh = [200 1100]; %acceptable range of possible F1 values
-    % ratio used to determine "late" or not. Absolute duration only used 
 defaultParams.lateThresh_ratio = 0.96; % acceptable endpoint ratio for speech before trial ends "too late"
 defaultParams.lateThresh_absolute = 1.5; % acceptable endpoint in seconds for speech before trial ends "too late". Only used as fallback if trial duration not available.
 defaultParams.earlyThresh_absolute = 0.05; 
@@ -92,6 +114,7 @@ UserData.dataValsIn = dataValsIn;
 UserData.dataValsOut = dataValsOut; 
 UserData.segFields = segFields; 
 UserData.dataValsFunction = dataValsFunction; 
+UserData.varargin = varargin; 
 
 colors.pert = [0.5 0.2 0.6]; 
 colors.dur = [25 180 85]./255; 
@@ -326,7 +349,7 @@ function errors = get_dataVals_errors(UserData,dataVals, segFields)
     for i = 1:length(dataVals)
         if dataVals(i).bExcl
             badTrials = [badTrials dataVals(i).trial]; %#ok<*AGROW>
-        elseif dataVals(i).(segFields.dur) < UserData.errorParams.shortThresh && dataVals(i).(segFields.dur) > UserData.errorParams.flipThresh %check for too short trials
+        elseif dataVals(i).(segFields.dur) < UserData.errorParams.shortThresh %check for too short trials
             shortTrials = [shortTrials dataVals(i).trial];
         elseif dataVals(i).bFlip % check for segmentation that is backwards
             flipTrials = [flipTrials dataVals(i).trial];
@@ -510,10 +533,11 @@ function [dataValsIn, dataValsOut, expt] = load_dataVals(UserData,dataPath,bCalc
     outstring = textwrap(UserData.warnText,{msg});
     set(UserData.warnPanel,'HighlightColor','yellow')
     set(UserData.warnText,'String',outstring)
+    varargin = UserData.varargin; 
     
     % Because dur uses both in and out, but sometimes you only needed to fix one or the other's segmentation 
     if bIn 
-        dataValsFunction(dataPath, 'signalIn', 1); 
+        dataValsFunction([], 'signalIn', [], varargin{1:end});  
         load(fullfile(dataPath,'dataVals_signalIn.mat'))
         dataValsIn = dataVals; 
         clear dataVals; 
@@ -521,7 +545,7 @@ function [dataValsIn, dataValsOut, expt] = load_dataVals(UserData,dataPath,bCalc
         dataValsIn = UserData.dataValsIn; 
     end
     if bOut
-        dataValsFunction(dataPath, 'signalOut', 1); 
+        dataValsFunction([], 'signalOut', [], varargin{1:end});  
         load(fullfile(dataPath,'dataVals_signalOut.mat'))
         dataValsOut = dataVals; 
         clear dataVals; 
