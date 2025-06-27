@@ -158,12 +158,15 @@ for i = 1:length(sortedTrialnums)
                 && isfield(trialparams,'event_params') ...
                 && ~isempty(trialparams.event_params)
             user_event_times = trialparams.event_params.user_event_times;
-            user_event_names = trialparams.event_params.user_event_names; 
-            n_events = length(user_event_times);
+            user_event_names = trialparams.event_params.user_event_names;
+
+            % Sort user events chronologically for accurate comparison
+            [~, timesortix] = sort(user_event_times); 
+            chron_user_event_names = user_event_names(timesortix); 
             
             % Check to make sure that the very last event is empty---otherwise you're gonna error out when getting a duration (and
             % something probably went wrong) 
-            if ~isempty(user_event_names{end}) 
+            if ~isempty(chron_user_event_names{end}) 
                 dataVals(i).bFishy = 1; 
                 bSkip = 1; 
             else
@@ -197,7 +200,7 @@ for i = 1:length(sortedTrialnums)
     
     % If you've determined that you DO ACTUALLY HAVE EVENTS then you can start getting the actual data 
     if trialparams.event_params.is_good_trial && ~bSkip       
-        
+
         % Do some checks about the integrity of each trial 
         nLabeledUevs = sum(~cellfun(@isempty, user_event_names)); 
         if nLabeledUevs ~= max_events
@@ -205,7 +208,7 @@ for i = 1:length(sortedTrialnums)
             dataVals(i).bFlip = 0; % can't check for flipping really because the trial is already messed up 
         else
             dataVals(i).bFishy = 0;
-            [~, uevSortIx] = sort(user_event_names(~cellfun(@isempty, user_event_names))); 
+            [~, uevSortIx] = sort(chron_user_event_names(~cellfun(@isempty, chron_user_event_names))); 
             [~, phraseSortIx] = sort(trialStimulus); 
             % If, when you sort the events alphabetically, you don't do the same rearranging as the actual phrase order, 
             % then it's possible you flipped some events 

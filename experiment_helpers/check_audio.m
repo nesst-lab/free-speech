@@ -281,7 +281,7 @@ function plotTrials(src)
         'FontSize',fontDispSize,'Visible','off',...
         'Callback',@toggleBExcl);
     
-        if UserData.dataVals(UserData.currTrials(iBg)).bExcl
+       if UserData.dataVals(UserData.currTrials(iBg)).bExcl
             UserData.htxt(iBg).BackgroundColor = [0.85 0.3 0.3];
         else
             UserData.htxt(iBg).BackgroundColor = [0.3 0.85 0.3];

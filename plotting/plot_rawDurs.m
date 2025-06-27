@@ -99,7 +99,11 @@ for g = 1:length(groups)
     ax = gca; 
     ylabel('duration (s)', 'Color', plotcolors.dur); 
     ax.YColor = plotcolors.dur; 
-    ylim([min([dataValsIn(inds).(durField)]) - 0.03 max([dataValsIn(inds).(durField)]) + 0.03]); 
+    try
+        ylim([min([dataValsIn(inds).(durField)]) - 0.03 max([dataValsIn(inds).(durField)]) + 0.03]); 
+    catch
+        warning('Please report the data and trial number %d to Robin for debugging', i); 
+    end
     
     yyaxis right
     ax = gca; 
@@ -109,7 +113,11 @@ for g = 1:length(groups)
         ylabel('lag (s)', 'Color', plotcolors.pert);
     end
     ax.YColor = plotcolors.pert; 
-    ylim([min(expt.pertMag) - 0.01 max(expt.pertMag) + 0.05]); 
+    try 
+        ylim([min(expt.pertMag) - 0.01 max(expt.pertMag) + 0.05]); 
+    catch
+        warning('Please report the data and trial number %d to Robin for debugging', i); 
+    end
     box off;
     
     xlim([0 expt.ntrials]); 
