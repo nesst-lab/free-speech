@@ -1,4 +1,4 @@
-function [] = check_timingDataVals(dataPath, seg_list, errorParams, dataValsFunction)
+function [] = check_timingDataVals(dataPath, show_seg, errorParams, dataValsFunction, textField, gen_segs)
 % Function to generally check that: 
 %   1. Hand correction is in the realm of correct
 %   2. Duration perturbations are what you were expecting
@@ -35,18 +35,20 @@ dbstop if error
 if nargin < 1 || isempty(dataPath), dataPath = cd; end
 if nargin < 3 || isempty(errorParams), errorParams = struct; end
 if nargin < 4 || isempty(dataValsFunction), dataValsFunction = @gen_timingDataVals; end
+if nargin < 5 || isempty(textField), textField = 'stimulusText'; end
+if nargin < 6 || isempty(gen_segs), gen_segs = {'all'}; end
 
 %% Load in various data structures
 
 if ~exist(fullfile(dataPath, 'dataVals_signalIn.mat'), 'file')
-    dataValsFunction([], 'signalIn');     
+    dataValsFunction([], 'signalIn', [], textField, gen_segs);     
 end
 load(fullfile(dataPath, 'dataVals_signalIn.mat')); 
 dataValsIn = dataVals; 
 clear dataVals; 
 
 if ~exist(fullfile(dataPath, 'dataVals_signalOut.mat'), 'file')
-    dataValsFunction([], 'signalOut'); 
+    dataValsFunction([], 'signalOut', [], textField, gen_segs); 
 end
 load(fullfile(dataPath, 'dataVals_signalOut.mat')); 
 dataValsOut = dataVals; 
@@ -57,8 +59,8 @@ load(fullfile(dataPath, 'expt.mat'));
 
 %% Set up the fieldnames you'll be looking for in dataVals
 
-segFields.dur = [seg_list 'Dur']; 
-segFields.lag = [seg_list 'Start_time']; 
+segFields.dur = [show_seg 'Dur']; 
+segFields.lag = [show_seg 'Start_time']; 
 
 
 %% Set up error parameters
@@ -315,6 +317,7 @@ function errors = get_dataVals_errors(UserData,dataVals, segFields)
     shortTrials = [];
     longTrials = [];
     flipTrials = []; 
+    fishyTrials = []; 
     earlyTrials = [];
     lateTrials = [];
     goodTrials = [];
@@ -325,8 +328,10 @@ function errors = get_dataVals_errors(UserData,dataVals, segFields)
             badTrials = [badTrials dataVals(i).trial]; %#ok<*AGROW>
         elseif dataVals(i).(segFields.dur) < UserData.errorParams.shortThresh && dataVals(i).(segFields.dur) > UserData.errorParams.flipThresh %check for too short trials
             shortTrials = [shortTrials dataVals(i).trial];
-        elseif dataVals(i).(segFields.dur) < UserData.errorParams.flipThresh % check for segmentation that is backwards
+        elseif dataVals(i).bFlip % check for segmentation that is backwards
             flipTrials = [flipTrials dataVals(i).trial];
+        elseif dataVals(i).bFishy % check for trials where something is off
+            fishyTrials = [fishyTrials dataVals(i).trial]; 
         elseif dataVals(i).(segFields.dur) > UserData.errorParams.longThresh %check for too long trials
             longTrials = [longTrials dataVals(i).trial];
             % RK to do 
@@ -347,6 +352,7 @@ function errors = get_dataVals_errors(UserData,dataVals, segFields)
     errors.badTrials = badTrials;
     errors.shortTrials = shortTrials;
     errors.flipTrials = flipTrials; 
+    errors.fishyTrials = fishyTrials; 
     errors.longTrials = longTrials;
     errors.earlyTrials = earlyTrials;
     errors.lateTrials = lateTrials;

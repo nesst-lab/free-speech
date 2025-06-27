@@ -1,4 +1,4 @@
-function [htracks,hsub] = plot_rawDurs(dataValsIn, dataValsOut,segField,grouping,trialset,parent,expt)
+function [htracks,hsub] = plot_rawDurs(dataValsIn, dataValsOut,pertField,grouping,trialset,parent,expt)
 %PLOT_RAWDURS           Plot the durations of segments of each trial. Used in check_timingDataVals
 %   PLOT_RAWFMTTRACKS(DATAVALS,GROUPING,TRIALSET,PARENT) plots the first and
 %   second formant tracks from each trial in TRIALSET in the figure or
@@ -24,12 +24,18 @@ if nargin < 7 || isempty(expt)
 end
 
 %%
+% segField will come in as either ehDur or ehStart_time (or whatever seg)
 plotcolors.dur = [25 180 85]./255; 
-if contains(segField, 'Dur')
+if contains(pertField, 'Dur')
     plotcolors.pert = [0.5 0.2 0.6]; 
+    segSplit = strsplit(pertField, 'Dur'); 
 else
     plotcolors.pert = [30 170 200]./255; 
+    segSplit = strsplit(pertField, 'Start_time'); 
 end
+
+% This combines just the seg part with the actual duration 
+durField = [segSplit{1} 'Dur']; 
 
 
 
@@ -64,15 +70,15 @@ for g = 1:length(groups)
         if (~isfield(dataValsIn,'bExcl') || ~dataValsIn(i).bExcl) && bInGroup
             % Plot that trials' duration 
             yyaxis left; 
-            htracks(g).dur(ihandle) = plot(dataValsIn(i).trial, dataValsIn(i).(segField),'Marker', 'o', 'LineStyle', 'none', ...
+            htracks(g).dur(ihandle) = plot(dataValsIn(i).trial, dataValsIn(i).(durField),'Marker', 'o', 'LineStyle', 'none', ...
                 'MarkerFaceColor', plotcolors.dur, 'MarkerEdgeColor', plotcolors.dur - 0.05,'MarkerSize',5); 
-            set(htracks(g).dur(ihandle),'Tag',num2str(dataValsIn(i).trial),'YdataSource',segField)
+            set(htracks(g).dur(ihandle),'Tag',num2str(dataValsIn(i).trial),'YdataSource',durField)
             hold on; 
             yyaxis right; 
-            pert = dataValsOut(i).(segField) - dataValsIn(i).(segField); 
+            pert = dataValsOut(i).(pertField) - dataValsIn(i).(pertField); 
             htracks(g).pert(ihandle) = plot(dataValsIn(i).trial, pert, 'Marker', '^', 'LineStyle', 'none', ...
                 'MarkerFaceColor', plotcolors.pert, 'MarkerEdgeColor', plotcolors.pert - 0.05,'MarkerSize',5); 
-            set(htracks(g).pert(ihandle),'Tag',num2str(dataValsIn(i).trial),'YdataSource',segField)
+            set(htracks(g).pert(ihandle),'Tag',num2str(dataValsIn(i).trial),'YdataSource',pertField)
             
             ihandle = ihandle+1;
         end
@@ -93,11 +99,11 @@ for g = 1:length(groups)
     ax = gca; 
     ylabel('duration (s)', 'Color', plotcolors.dur); 
     ax.YColor = plotcolors.dur; 
-    ylim([min([dataValsIn(inds).(segField)]) - 0.03 max([dataValsIn(inds).(segField)]) + 0.03]); 
+    ylim([min([dataValsIn(inds).(durField)]) - 0.03 max([dataValsIn(inds).(durField)]) + 0.03]); 
     
     yyaxis right
     ax = gca; 
-    if contains(segField, 'Dur')
+    if contains(pertField, 'Dur')
         ylabel('perturbation (s)', 'Color', plotcolors.pert); 
     else
         ylabel('lag (s)', 'Color', plotcolors.pert);

@@ -1,4 +1,4 @@
-function [errorTrials] = gen_timingDataVals(dataPath,buffertype,bSave,textField,seg_list)
+function [dataVals] = gen_timingDataVals(dataPath,buffertype,bSave,textField,seg_list)
 %
 % Largely copied from gen_dataVals_tramTransfer. This is the generic function that will simply get the start times and
 % duration of segments labeled by user events. It assumes that all labeled user events are fair game. This works best with
@@ -36,6 +36,7 @@ function [errorTrials] = gen_timingDataVals(dataPath,buffertype,bSave,textField,
 %                                   - bPerturb: whether or not there was a perturbation on that trial (taken from
 %                                   expt.pertMag)
 %                                   - bExcl: if the trial has been marked as bad
+%                                   - bFishy: if the trial has the wrong number of (nonempty) events
 %                                   - bFlip: if the order of the user events is off (according to arpabet string) 
 % 
 
@@ -68,7 +69,8 @@ if ~bSave
     return; 
 end
 
-if nargin < 5 || isempty(seg_list), seg_list = 'all'; end
+if nargin < 5 || isempty(seg_list), seg_list = {'all'}; end
+if ischar(seg_list), seg_list = {seg_list}; end % convert to cell if necessary 
 
 %%
 % load expt files
@@ -129,16 +131,23 @@ end
 
 %% Extract data from each trial
 
-e = 1; % error trial counter
-errorTrials = []; 
+% e = 1; % error trial counter
+% errorTrials = []; 
 fprintf('Generating dataVals for %s... ', buffertype)
 bSkip = 0; 
 for i = 1:length(sortedTrialnums)
     trialnum = sortedTrialnums(i);
     filename = sortedFilenames{i};
     print_locationInLoop(trialnum, 25, i); 
+    n_events = 0; 
 
-    trialStimulus = exptPhrases{expt.(['list' upper(textField(1)) textField(2:end)])(trialnum)}; 
+    trialStimulus = exptPhrases{expt.(['all' upper(textField(1)) textField(2:end)])(trialnum)}; 
+    max_events = length(trialStimulus); % This is the number of LABELED events
+    if strcmp(seg_list{1}, 'all')
+        segs2evaluate = trialStimulus; 
+    else
+        segs2evaluate = seg_list; 
+    end
     
     % Load in the trial.mat file 
     if exist(fullfile(trialPath, filename), 'file')
@@ -150,102 +159,101 @@ for i = 1:length(sortedTrialnums)
                 && ~isempty(trialparams.event_params)
             user_event_times = trialparams.event_params.user_event_times;
             user_event_names = trialparams.event_params.user_event_names; 
+            n_events = length(user_event_times);
+            
+            % Check to make sure that the very last event is empty---otherwise you're gonna error out when getting a duration (and
+            % something probably went wrong) 
+            if ~isempty(user_event_names{end}) 
+                dataVals(i).bFishy = 1; 
+                bSkip = 1; 
+            else
+                dataVals(i).bFishy = 0; 
+                bSkip = 0; 
+            end
         else
             user_event_times = [];
             user_event_names = {}; 
             warning('No events for trial %d\n',trialnum); 
+            bSkip = 1;
         end
-        n_events = length(user_event_times);
-        bSkip = 0; 
+        
     else
+        % If there's no file then obviously skipping 
         bSkip = 1; 
     end
-
-    if trialparams.event_params.is_good_trial && ~bSkip
+    
+    % Get general trial information, regardless of whether you can get actual duration info from the trial 
+    dataVals(i).wordList = expt.listWords(trialnum); 
+    dataVals(i).condList = expt.listConds(trialnum);
+    dataVals(i).word = expt.allWords(trialnum); % this is for grouping purposes in check_timingDataVals
+    dataVals(i).cond = expt.allConds(trialnum); 
+    dataVals(i).trial = trialnum; % Trial number
+    dataVals(i).token = find(trialnum == ix.(expt.listWords{trialnum})); % repetition of that specific word 
+    if expt.pertMag(trialnum) > 0
+        dataVals(i).bPerturb = 1;
+    else
+        dataVals(i).bPerturb = 0; 
+    end
+    
+    % If you've determined that you DO ACTUALLY HAVE EVENTS then you can start getting the actual data 
+    if trialparams.event_params.is_good_trial && ~bSkip       
         
-
-        % event times
-        vStart_time = user_event_times(strcmp(user_event_names,'AH') | strcmp(user_event_names,'EH'));        
-        sStart_time = user_event_times(strcmp(user_event_names,'S')); 
-        cStart_time = user_event_times(strcmp(user_event_names,word1Upper(end)));
-        cBurst_time = user_event_times(find(strcmp(user_event_names,word1Upper(end)) + 1)); 
-
-        % segment durations
-        onsDur = vStart_time - onset_time; 
-        vDur = sStart_time - vStart_time; 
-        sDur = cStart_time - sStart_time; 
-        cDur = cBurst_time - cStart_time; 
-
-        % Get the lengthening and shortening targets 
-        lengthenTargetDur = vDur;         
-
-        if n_events > max_events
-            warning('%d events found in trial %d (expected %d)',n_events,trialnum,max_events);
-            fprintf('ignoring event %d\n',max_events+1:n_events)
-        elseif n_events < max_events
-            warning('Only %d events found in trial %d (expected %d)',n_events,trialnum,max_events);
-            fprintf('Check for empty values.\n')
-            errorTrials(e) = trialnum; 
-            e = e+1; 
-        end
-
-        dataVals(i).onset_time = onset_time;            
-        dataVals(i).vStart_time = vStart_time; 
-        dataVals(i).sStart_time = sStart_time; 
-        dataVals(i).cStart_time = cStart_time;
-        dataVals(i).cBurst_time = cBurst_time;
-
-        dataVals(i).onsDur = onsDur;
-        dataVals(i).vDur = vDur; 
-        dataVals(i).sDur = sDur; 
-        dataVals(i).cDur = cDur; 
-
-        dataVals(i).dur = sStart_time - vStart_time; % for dataVals tracking. this is only the stressed vowel dur
-        dataVals(i).wordDur = cBurst_time - vStart_time;    
-        dataVals(i).lengthenTargetDur = lengthenTargetDur;
-
-        dataVals(i).wordList = expt.listWords(trialnum);
-        dataVals(i).condList = expt.listConds(trialnum);
-        dataVals(i).word = expt.allWords(trialnum); 
-        dataVals(i).cond = expt.allConds(trialnum); 
-        dataVals(i).trial = trialnum; % Trial number
-        dataVals(i).token = find(trialnum == ix.(expt.listWords{trialnum})); % repetition of that specific word 
-        if expt.pertMag(trialnum) > 0
-            dataVals(i).bPerturb = 1;
+        % Do some checks about the integrity of each trial 
+        nLabeledUevs = sum(~cellfun(@isempty, user_event_names)); 
+        if nLabeledUevs ~= max_events
+            dataVals(i).bFishy = 1; 
+            dataVals(i).bFlip = 0; % can't check for flipping really because the trial is already messed up 
         else
-            dataVals(i).bPerturb = 0; 
+            dataVals(i).bFishy = 0;
+            [~, uevSortIx] = sort(user_event_names(~cellfun(@isempty, user_event_names))); 
+            [~, phraseSortIx] = sort(trialStimulus); 
+            % If, when you sort the events alphabetically, you don't do the same rearranging as the actual phrase order, 
+            % then it's possible you flipped some events 
+            if any(uevSortIx ~= phraseSortIx)
+                dataVals(i).bFlip = 1; 
+            else
+                dataVals(i).bFlip = 0; 
+            end
+                
+        end
+        
+        % Get the durations and start times of each segment 
+        for s = 1:length(segs2evaluate)
+            seg = lower(segs2evaluate{s}); 
+            uevix = find(strcmpi(user_event_names, seg)); % not case sensitive---can specify in lowercase though MFA gives in upper
+            dataVals(i).([seg 'Dur']) = user_event_times(uevix + 1) - user_event_times(uevix); 
+            dataVals(i).([seg 'Start_time']) = user_event_times(uevix); 
         end
             
+%         
+% 
+%               
+% 
+%         if n_events > max_events
+%             warning('%d events found in trial %d (expected %d)',n_events,trialnum,max_events);
+%             fprintf('ignoring event %d\n',max_events+1:n_events)
+%         elseif n_events < max_events
+%             warning('Only %d events found in trial %d (expected %d)',n_events,trialnum,max_events);
+%             fprintf('Check for empty values.\n')
+%             errorTrials(e) = trialnum; 
+%             e = e+1; 
+%         end
 
-    else % bad and non-existent trials get all NaNs
-        dataVals(i).onset_time = NaN;
-        dataVals(i).vStart_time = NaN; 
-        dataVals(i).sStart_time = NaN; 
-        dataVals(i).cStart_time = NaN; 
-        dataVals(i).cBurst_time = NaN;
-
-        dataVals(i).dur = NaN; % for dataVals tracking. this is only the stressed vowel dur
-        dataVals(i).wordDur = NaN; 
-        dataVals(i).onsDur = NaN;
-        dataVals(i).vDur = NaN; 
-        dataVals(i).sDur = NaN; 
-        dataVals(i).cDur = NaN; 
-        dataVals(i).lengthenTargetDur = NaN;
-
-        dataVals(i).wordList = expt.listWords(trialnum);
-        dataVals(i).condList = expt.listConds(trialnum);
-        dataVals(i).word = expt.allWords(trialnum); 
-        dataVals(i).cond = expt.allConds(trialnum); 
-        dataVals(i).trial = trialnum; 
-        dataVals(i).token = find(trialnum == ix.(expt.listWords{trialnum}));
-        if expt.pertMag(trialnum) > 0
-            dataVals(i).bPerturb = 1;
-        else
-            dataVals(i).bPerturb = 0; 
+    else
+        % Other exclusions 
+        dataVals(i).bFishy = 1; % basically just means that you don't have something here but you probably should 
+        dataVals(i).bFlip = 0; % no events so nothing to flip 
+        
+        % bad and non-existent trials get all NaNs for the time values
+        for s = 1:length(segs2evaluate)
+            seg = lower(segs2evaluate{s}); 
+            dataVals(i).([seg 'Dur']) = NaN; 
+            dataVals(i).([seg 'Start_time']) = NaN;  
         end
 
-
     end
+    
+    % Now finally check for it being a bad trial 
     if exist('trialparams','var') && isfield(trialparams,'event_params') && ~isempty(trialparams.event_params)
         dataVals(i).bExcl = ~trialparams.event_params.is_good_trial;
     else
