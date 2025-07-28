@@ -75,8 +75,8 @@ for g = 1:length(groups)
             set(htracks(g).dur(ihandle),'Tag',num2str(dataValsIn(i).trial),'YdataSource',durField)
             hold on; 
             yyaxis right; 
-            pert = dataValsOut(i).(pertField) - dataValsIn(i).(pertField); 
-            htracks(g).pert(ihandle) = plot(dataValsIn(i).trial, pert, 'Marker', '^', 'LineStyle', 'none', ...
+            pert(i) = dataValsOut(i).(pertField) - dataValsIn(i).(pertField); 
+            htracks(g).pert(ihandle) = plot(dataValsIn(i).trial, pert(i), 'Marker', '^', 'LineStyle', 'none', ...
                 'MarkerFaceColor', plotcolors.pert, 'MarkerEdgeColor', plotcolors.pert - 0.05,'MarkerSize',5); 
             set(htracks(g).pert(ihandle),'Tag',num2str(dataValsIn(i).trial),'YdataSource',pertField)
             
@@ -114,7 +114,7 @@ for g = 1:length(groups)
     end
     ax.YColor = plotcolors.pert; 
     try 
-        ylim([min(expt.pertMag) - 0.01 max(expt.pertMag) + 0.05]); 
+        ylim([min(pert) - 0.01 max(pert) + 0.05]); 
     catch
         warning('Please report the data and trial number %d to Robin for debugging', i); 
     end
