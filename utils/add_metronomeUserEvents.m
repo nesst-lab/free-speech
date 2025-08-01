@@ -34,22 +34,26 @@ for t = trials
         load(fullfile(dataPath, trialOutFolder, trialFileName)); 
     catch
         warning('No signalOut audioGUI file found for trial %d', t); 
-        break; 
+        continue; 
     end
 
-    % Add in ticks 
-    lastTickTime = max(trialparams.event_params.user_event_times); 
-    nTicks = length(trialparams.event_params.user_event_times); 
-    if nTicks > 1
-        warning('More than one metronome tick already marked. Skipping trial %d.', t); 
-        break; 
+    if trialparams.event_params.is_good_trial
+        % Add in ticks 
+        lastTickTime = max(trialparams.event_params.user_event_times); 
+        nTicks = length(trialparams.event_params.user_event_times); 
+        if nTicks > 1
+            warning('More than one metronome tick already marked. Skipping trial %d.', t); 
+            continue; 
+        end
+        for m = 1:nEvents
+            trialparams.event_params.user_event_times(nTicks + m) = lastTickTime + isi(m); 
+            trialparams.event_params.user_event_names{nTicks + m} = ['uev' num2str(nTicks + m)]; 
+            lastTickTime = lastTickTime + isi(m); 
+        end
+        save(fullfile(dataPath, trialOutFolder, trialFileName), 'sigmat', 'trialparams'); 
+    else
+        warning('Trial %d marked as bad trial. Skipping', t); 
     end
-    for m = 1:nEvents
-        trialparams.event_params.user_event_times(nTicks + m) = lastTickTime + isi(m); 
-        trialparams.event_params.user_event_names{nTicks + m} = ['uev' num2str(nTicks + m)]; 
-        lastTickTime = lastTickTime + isi(m); 
-    end
-    save(fullfile(dataPath, trialOutFolder, trialFileName), 'sigmat', 'trialparams'); 
 
 end
 
