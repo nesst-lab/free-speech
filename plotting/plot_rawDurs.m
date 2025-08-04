@@ -52,6 +52,7 @@ end
 for g = 1:length(groups)
     groupId = groups(g); 
     hsub(g) = subplot(nRows, ceil(length(groups)/nRows), g, 'Parent', parent);
+    pert = 0; % So the min/max works ylim works 
 %     hsub(g) = subplot(1,length(groups),g,'Parent',parent);
     % plot tracks and ends
     ihandle = 1;
