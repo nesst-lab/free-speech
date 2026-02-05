@@ -1,4 +1,4 @@
- function [exptPath] = get_exptLoadPath(exptName,varargin)
+function [exptPath] = get_exptLoadPath(exptName,varargin)
 
 if nargin < 1, exptName = []; end
 
