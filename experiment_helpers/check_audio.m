@@ -17,6 +17,7 @@ if nargin < 5 || isempty(stringType), stringType = 'listWords'; end
 
 %% create GUI
 f = figure('Visible','off','Units','Normalized','Position',[.1 .1 .8 .8]);
+set(f, 'Tag', 'check_audio', 'HandleVisibility', 'on'); % Addition for integrating this in experiments 
 set(f, 'WindowKeyPressFcn', @KeyPress)
 
 UserData = guihandles(f);

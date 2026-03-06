@@ -30,7 +30,6 @@ function [] = set_signalOutUserEvents(dataPath,trials)
 % Altered from same function for cerebTimeAdapt and taimComp
 %
 % Initiated RK 2024-08-07; edited SB 2024-12-13; revised RK 2025-01-02; updated SB 2025-02-11 
-% Copied by MR 2025-06-26 for use in new study deftAcoustic
 
 dbstop if error
 

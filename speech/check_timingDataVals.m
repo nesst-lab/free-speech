@@ -66,14 +66,14 @@ if nargin < 4 || isempty(dataValsFunction), dataValsFunction = @gen_timingDataVa
 %% Load in various data structures
 
 if ~exist(fullfile(dataPath, 'dataVals_signalIn.mat'), 'file')
-    dataValsFunction([], 'signalIn', [], varargin{1:end});     
+    dataValsFunction(dataPath, 'signalIn', [], varargin{1:end});     
 end
 load(fullfile(dataPath, 'dataVals_signalIn.mat')); 
 dataValsIn = dataVals; 
 clear dataVals; 
 
 if ~exist(fullfile(dataPath, 'dataVals_signalOut.mat'), 'file')
-    dataValsFunction([], 'signalOut', [], varargin{1:end}); 
+    dataValsFunction(dataPath, 'signalOut', [], varargin{1:end}); 
 end
 load(fullfile(dataPath, 'dataVals_signalOut.mat')); 
 dataValsOut = dataVals; 
@@ -103,6 +103,7 @@ errorParams = set_missingFields(errorParams, defaultParams, 0);
 
 h_tdv = figure('Name', 'Check Timing Data Vals', 'Units', 'Normalized', 'Position', [0.1 0.1 0.85 0.8]); % , 'CloseRequestFcn', @save_exit
 % set(h_tdv,'DeleteFcn',@delete_func); % Keep delete_func, which just calls the save and exit prompt
+set(h_tdv,'Tag', 'tdv','HandleVisibility','on');
 
 UserData = guihandles(h_tdv);
 UserData.dataPath = dataPath;
