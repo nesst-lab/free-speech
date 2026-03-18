@@ -1315,7 +1315,10 @@ hedit.ostFromTrial = uicontrol(p.guidata.buttonPanel,'Style','edit',...
             ostTrial = max(availableTrials);             
         elseif ostTrial < min(availableTrials)
             fprintf('No trial number %d. Setting at first trial.\n', ostTrial)
-            ostTrial = min(availableTrials);             
+            ostTrial = min(availableTrials);     
+        elseif isnan(ostTrial)
+            fprintf('Cannot have empty OST trial. Setting at first trial.\n')
+            ostTrial = min(availableTrials); 
         end
 
         newTrial = num2str(ostTrial); 
