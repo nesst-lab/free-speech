@@ -10,6 +10,7 @@ install.packages("reshape2")
 install.packages("GGally")
 install.packages("emmeans")
 
+install.packages("gridtext")
 install.packages("ggtext")
 install.packages("glue")
 install.packages("dplyr")
@@ -30,3 +31,5 @@ install.packages("ggdist")
 install.packages("gghalves")
 install.packages("see") # half violin
 install.packages("ggh4x") # panel size forcing for wrapping controls to ataxia
+
+install.packages("coefplot")
