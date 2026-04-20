@@ -77,7 +77,7 @@ for t = trials
         warning('No signalOut audioGUI file found for trial %d', t); 
         continue; 
     end
-    if trialparams.event_params.is_good_trial
+    % if trialparams.event_params.is_good_trial
         % sort ticks and create arrays into which ticks will be saved
         nTicks = length(trialparams.event_params.user_event_times); 
         [~, indexTimes] = sort(trialparams.event_params.user_event_times);
@@ -85,7 +85,7 @@ for t = trials
         sortNames = {};
         % determine if there are enough ticks to be deleted
         if nTicks < nEvents
-            warning('The number of saved events is greater than the existing number in the file. Skipping trial %d.', t); 
+            warning('The number of events you want to keep (%d) is less than what exists in the file (%d). Skipping trial %d.', nEvents, nTicks, t); 
             continue; 
         end
         % delete ticks
@@ -99,9 +99,9 @@ for t = trials
         trialparams.event_params.user_event_times = sortTimes;
         trialparams.event_params.user_event_names = sortNames;
         save(fullfile(dataPath, trialOutFolder, trialFileName), 'sigmat', 'trialparams');
-    else
-        warning('Trial %d marked as bad trial. Skipping', t); 
-    end
+    % else
+        % warning('Trial %d marked as bad trial. Skipping', t); 
+    % end
     
 end
 
