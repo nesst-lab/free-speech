@@ -31,7 +31,7 @@ dbstop if error
 
 if nargin < 1 || isempty(dataPath), dataPath = cd; end
 if nargin < 2 || isempty(segs)
-    segs = {'s' 'z' 'sh' 'zh' 'f' 'v' 'dh' 'th' 'h'}; 
+    segs = {'b' 's' 'z' 'sh' 'zh' 'f' 'v' 'dh' 'th' 'h'}; 
 end
 
 if ischar(segs), segs = {segs}; end % catch people just entering 's' instead of {'s'}
@@ -63,7 +63,17 @@ if nargin < 4 || isempty(trials), trials = 1:nVuvFiles; end
 
 vuvData = []; 
 for i = trials
-    % vuvFileName = vuvFiles{i}; 
+    % INitialize everything as empty so that if you have a single-segment (zipper, sipper in isolation) you don't get
+    % residual 1x2 cells
+    targetSegs = {}; 
+    segDurs = [];  
+    vuv_seq = {}; 
+    vuv_percs = {}; 
+    vuv_starts = {}; 
+    vPerc = []; 
+    uPerc = []; 
+    
+    % vuvFileName = vuvFiles{i};
     trialNo = i; 
     vuvFileName = sprintf('AudioData_%d_VUV.TextGrid', trialNo); 
     splitFN = split(vuvFileName, '_'); 
