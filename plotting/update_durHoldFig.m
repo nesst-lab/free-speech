@@ -9,6 +9,7 @@ dbstop if error
 %% 
 
 drow = find(~isnan([durHoldCalc.availableDur]), 1, 'last'); 
+trial_index = durHoldCalc(drow).trialNo; 
 
 %% 
 
