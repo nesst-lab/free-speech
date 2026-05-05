@@ -15,6 +15,8 @@ if nargin < 3 || isempty(bSort), bSort = 0; end
 if nargin < 4 || isempty(nTrials), nTrials = 10; end
 if nargin < 5 || isempty(stringType), stringType = 'listWords'; end
 
+dbstop if error
+
 %% create GUI
 f = figure('Visible','off','Units','Normalized','Position',[.1 .1 .8 .8]);
 set(f, 'Tag', 'check_audio', 'HandleVisibility', 'on'); % Addition for integrating this in experiments 
