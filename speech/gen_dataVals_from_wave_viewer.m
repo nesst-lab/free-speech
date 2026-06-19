@@ -141,7 +141,7 @@ for i = 1:length(sortedTrialnums)
 
             % convert certain dataVals fields from cell to single instance array
             if ~bMultiSegment && iscell(dataValsTrial.f0)
-                for field = {'f0' 'f1' 'f2' 'int' 'pitch_taxis' 'ftrack_taxis' 'ampl_taxis' 'dur' 'segment'}
+                for field = {'f0' 'f1' 'f2' 'int' 'pitch_taxis' 'ftrack_taxis' 'ampl_taxis' 'dur' 'segment' 'onset_time' 'offset_time'} % RK change
                     dataValsTrial.(field{:}) = dataValsTrial.(field{:}){:};
                 end
             end
@@ -158,7 +158,7 @@ for i = 1:length(sortedTrialnums)
             end
         else
             % if not a good trial, populate dataValsTrial fields with empty arr
-            for field = {'f0' 'f1' 'f2' 'int' 'pitch_taxis' 'ftrack_taxis' 'ampl_taxis' 'dur' 'segment'}
+            for field = {'f0' 'f1' 'f2' 'int' 'pitch_taxis' 'ftrack_taxis' 'ampl_taxis' 'dur' 'segment' 'onset_time' 'offset_time'}
                 dataValsTrial.(field{:}) = [];
             end
         end
