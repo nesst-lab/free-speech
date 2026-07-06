@@ -95,7 +95,7 @@ expt = set_missingField(expt,'shiftAngles',zeros(1,expt.ntrials));
 expt = set_missingField(expt,'stimulusText',expt.words);
 expt = set_missingField(expt,'allStimulusText',expt.allWords);
 if length(expt.words) ~= length(expt.stimulusText)
-    error(['Mismatch between length of expt.words of expt.stimulusText. ' ...
+    error(['Mismatch between length of expt.words and expt.stimulusText. ' ...
         'Those fields should have the same number of string elements.'])
 end
 if all(strcmp(expt.words, expt.stimulusText))
