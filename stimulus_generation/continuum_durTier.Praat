@@ -5,19 +5,19 @@
 # UI to choose save directory, duration range, and step size
 form Choose directory to save files and step information
 	comment Where would you like to save the new files? 
-	text saveDir M:\experiments\cerebDurJND\bus-buzz_continuum\
+	text saveDir C:\Users\rktfn\OneDrive - University of Missouri\nesstlab\experiments\deftDurJND\stimuli\wav_files\
 
 	comment What would you like to prefix the soundfiles names with? 
-	text wordTag buSZ_
+	text wordTag funny_
 
 	comment How long (in ms) do you want the shortest duration to be? 
-	positive firstStep 100
+	positive firstStep 80
 
 	comment How long (in ms) do you want the longest duration to be?
-	positive lastStep 250
+	positive lastStep 180
 
 	comment How big (in ms) should the step size be between durations? 
-	real stepSize 20
+	real stepSize 5
 
 endform
 
@@ -68,30 +68,46 @@ manipObject = To Manipulation: 0.01, 75, 350
 manipObjectName$ = selected$ ()
 selectObject (manipObject)
 View & Edit
-
 pause Manipulation OK?
 
-for i from 1 to nitems
-editor 'manipObjectName$'
-	# New duration tier 
-	New duration
+# Extract just the duration object (RK change for Praat version change 7/13/2026)
+selectObject (manipObject)
+durationTierObject = Extract duration tier
+selectObject (durationTierObject)
 
-	# Establish non-warped areas
-	Add duration point at: startOriginalInterval, 1
-	Add duration point at: startWarp, 1	
-	Add duration point at: endWarp, 1
-	Add duration point at: endOriginalInterval, 1
-		
+# Add non-warped area points
+Add point: startOriginalInterval, 1
+Add point: startWarp, 1	
+Add point: endWarp, 1
+Add point: endOriginalInterval, 1
+
+for i from 1 to nitems
 	# Get desired duration in s
 	desiredVowelDuration = durArray [i]/1000
 	theMiddleShouldBe = desiredVowelDuration - unchangeableDuration
 	# value of dur point at warp points
 	ratioManipToReal =  theMiddleShouldBe / baseDuration
 
-	# Set warp points
-	Add duration point at: warpPoint1, ratioManipToReal
-	Add duration point at: warpPoint2, ratioManipToReal
+	selectObject (durationTierObject)
+	nDurPoints = Get number of points
 
+	if nDurPoints > 4
+		# Remove old points 
+		Remove point near: warpPoint1
+		Remove point near: warpPoint2
+	endif
+
+	# Set new warp points	
+	Add point: warpPoint1, ratioManipToReal
+	Add point: warpPoint2, ratioManipToReal
+
+	# Replace the old duration tier with the new one
+	selectObject (durationTierObject)
+	plusObject (manipObject)
+	Replace duration tier
+
+
+editor 'manipObjectName$'
 	newSynth = Publish resynthesis
 endeditor
 	
