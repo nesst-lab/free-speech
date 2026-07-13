@@ -1,4 +1,6 @@
 ### Takes a manipulation object and makes vowel duration steps from 90 - 220 ms. 
+# Note: the original was written in ~2022 with a version of praat possibly from ~2019. 
+# As of July 2026 it is updated to work with praat version 6.4.07 which is from March 2024. It was not retrotested. 
 
 # Lazy saving
 
