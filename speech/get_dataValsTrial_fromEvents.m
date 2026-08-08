@@ -28,6 +28,8 @@ for s = 1:nSegments
     dataValsTrial.ftrack_taxis{s} = sigmat.ftrack_taxis(onsetIndfx:offsetIndfx)'; % formant time axis
     dataValsTrial.ampl_taxis{s} = sigmat.ampl_taxis(onsetIndAmp:offsetIndAmp)';   % amplitude time axis
     dataValsTrial.dur{s} = offset_time - onset_time;                              % duration
+    dataValsTrial.onset_time{s} = onset_time; 
+    dataValsTrial.offset_time{s} = offset_time;                                     % Start and end times -- RK change
     
     if ~isempty(event_names)
         dataValsTrial.segment{s} = event_names{s};
