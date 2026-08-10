@@ -2,7 +2,7 @@ function [exptPath] = get_exptLoadPath(exptName,varargin)
 
 if nargin < 1, exptName = []; end
 
-nesstComputers = {'WHITTAKER', 'PERTWEE', 'TENNANT', 'DAVISON', 'BAKER', 'MCCOY', 'MCGANN', 'CHLPR-CSJZ3M3' 'CHLPR-GMVD6J3'}; 
+nesstComputers = {'WHITTAKER', 'PERTWEE', 'TENNANT', 'DAVISON', 'BAKER', 'MCCOY', 'MCGANN', 'CHLPR-CSJZ3M3' 'CHLPR-GMVD6J3', 'CHLPR-HVB6F94'}; 
 bjorndahlComputers = {'P-CBJORN'}; 
 
 if ispc
