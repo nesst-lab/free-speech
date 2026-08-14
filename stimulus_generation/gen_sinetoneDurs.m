@@ -6,7 +6,7 @@ function [sinetones] = gen_sinetoneDurs(savedir, durs, f0, amplitude, fs, padDur
 % 3. f0: f0 of the sinetone. Defaults to 200
 % 4. amplitude: amplitude of the sinetone. Defaults to 0.99. 
 % 5. fs: sampling rate. Defaults to 24000
-% 6. padDur: duration of the silences before and after the sine tone. Defaults to 250 ms
+% 6. padDur: duration of the silences before and after the sine tone. IN SECONDS. Defaults to 250 ms
 % 7. rampDur: duration of the hanning window ramp. Defaults to 10 ms
 
 dbstop if error
