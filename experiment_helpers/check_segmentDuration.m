@@ -171,7 +171,7 @@ for itrial = 1:ntrials
         end
     end
  
-    % Put into into event_params 
+    % Put info into event_params 
     event_params.user_event_times = ueventTime;
     if strcmp(expt.name, 'timeAdapt')
         if strcmp(expt.trackingFileName,'capper') || strcmp(expt.trackingFileName,'gapper') || strcmp(expt.trackingFileName,'ada') || strcmp(expt.trackingFileName,'ata')
@@ -201,14 +201,14 @@ end
     trueDur = nan(nStatusPairs, ntrials);  
     goodTokens = 0; 
     for itrial = 1:ntrials
-        load(fullfile(dataPath,trialfolder,sprintf('%d.mat',itrial))); 
-        bInclude(s, itrial) = trialparams.event_params.is_good_trial; 
+        load(fullfile(dataPath,trialfolder,sprintf('%d.mat',itrial)));         
         
         for s = 1:nStatusPairs
             % Get pairs of event times, adjust the starting one by putting the buffer back 
             startTime = trialparams.event_params.user_event_times(s); 
             endTime = trialparams.event_params.user_event_times(s+1); 
             adjusted_startTime = startTime + eventBuffer(s); 
+            bInclude(s, itrial) = trialparams.event_params.is_good_trial; 
 
             if trialparams.event_params.is_good_trial
                 availableDur(s, itrial) = endTime - adjusted_startTime; 
