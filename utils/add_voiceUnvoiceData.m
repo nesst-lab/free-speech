@@ -45,30 +45,40 @@ end
 %% Load in meta information 
 
 load(fullfile(dataPath, 'expt.mat')); 
-subj = expt.snum; 
-ntrials = expt.ntrials; 
+pathParts = split(dataPath, filesep); 
+findSnum = regexp(pathParts, 'nh[0-9]*'); 
+snumPartIx = find(~cellfun(@isempty, findSnum)); % this is a little overly robust but I am doing this in case the path style isn't exactly the same. 
+if length(snumPartIx) == 1
+    subj = pathParts{snumPartIx}; 
+elseif isempty(snumPartIx) || length(snumPartIx) > 1
+    subj = input('I don''t understand your file path. Please type in the subject ID (e.g., nh0001): ', 's'); 
+end
 
 % Get number of files in VUV folder 
 vuvPath = fullfile(dataPath, 'vuvTG'); 
 vuvList = dir(vuvPath); 
 
-vuvListNames = {vuvList.name}; 
-nVuvFiles = sum(contains(vuvListNames, 'vuv', 'IgnoreCase', true)); % Get the number of trials with VUV in the name 
-vuvFiles = {vuvListNames{find(contains(vuvListNames, 'vuv', 'IgnoreCase', true))}}; 
+vuvFiles = {vuvList.name}; 
+vuvFiles = vuvFiles(find(contains(vuvFiles, 'vuv', 'IgnoreCase', true))); % get only the ones with VUV in the name
+availableVuvTrials = []; 
+for v = 1:length(vuvFiles)
+    vuvListName = vuvFiles{v}; 
+    vuvParts = split(vuvListName, '_'); 
+    vuvNum = str2double(vuvParts{2}); 
+    availableVuvTrials = [availableVuvTrials vuvNum]; 
+end
 
-if nargin < 4 || isempty(trials), trials = 1:nVuvFiles; end
+if nargin < 4 || isempty(trials), trials = sort(availableVuvTrials); end
 
 
 %% Loop through VUV files 
-
+fprintf('Getting VUV data from trial ')
 vuvData = []; 
-for i = trials
-    % vuvFileName = vuvFiles{i}; 
-    trialNo = i; 
+for i = 1:length(trials)
+
+    trialNo = trials(i); 
+    print_locationInLoop(trialNo, 25, i); 
     vuvFileName = sprintf('AudioData_%d_VUV.TextGrid', trialNo); 
-    splitFN = split(vuvFileName, '_'); 
-    % trialNo = splitFN{2}; % It should always be in 2 position 
-    % trialNo = str2double(trialNo); 
     vuvTG = tgRead(fullfile(vuvPath, vuvFileName)); 
 
     % Find the tier that is called vuv (it doesn't matter what position it's in) 
