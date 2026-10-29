@@ -44,7 +44,6 @@ end
 
 %% Load in meta information 
 
-load(fullfile(dataPath, 'expt.mat')); 
 pathParts = split(dataPath, filesep); 
 findSnum = regexp(pathParts, 'nh[0-9]*'); 
 snumPartIx = find(~cellfun(@isempty, findSnum)); % this is a little overly robust but I am doing this in case the path style isn't exactly the same. 
