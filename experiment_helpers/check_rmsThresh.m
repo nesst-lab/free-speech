@@ -59,7 +59,7 @@ switch params.checkMethod
         if onset < 1
             onset = 1;
         end
-        offset = peak + peakWindowNFrames/2;
+        offset = round(peak + peakWindowNFrames/2);
         if offset > length(data.rms)
             offset = length(data.rms);
         end
