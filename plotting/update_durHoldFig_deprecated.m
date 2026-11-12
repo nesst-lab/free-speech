@@ -1,4 +1,4 @@
-function [durHoldFig, expt] = update_durHoldFig(durHoldFig, durHoldCalc, expt)
+function [durHoldFig, expt] = update_durHoldFig_deprecated(durHoldFig, durHoldCalc, expt)
 % Function that modularizes updating the durhold calculation figure during temporal perturbation studies
 % 
 % Takes in the figure, the durHoldCalc table, and expt
